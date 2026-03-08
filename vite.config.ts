@@ -6,4 +6,7 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   // Use root path for dev, GitHub Pages path for production
   base: command === 'serve' ? '/' : '/hopfield-energy/',
+  build: {
+    chunkSizeWarningLimit: 1000,
+  },
 }))

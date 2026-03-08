@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function BoltzmannMachines() {
     return (
         <div>
@@ -30,7 +32,7 @@ export default function BoltzmannMachines() {
                 <p>
                     The energy of a configuration is defined as:
                 </p>
-                <pre><code>E(v, h) = -Σᵢⱼ wᵢⱼ sᵢ sⱼ - Σᵢ bᵢ sᵢ</code></pre>
+                <LaTeX block math="E(v, h) = -\sum_{i,j} w_{ij} s_i s_j - \sum_i b_i s_i" />
                 <p>
                     where v represents visible units, h represents hidden units, w are weights,
                     and b are biases. The probability of a configuration follows the Boltzmann distribution.
@@ -42,11 +44,11 @@ export default function BoltzmannMachines() {
                 <p>
                     At thermal equilibrium, the probability of a state is given by:
                 </p>
-                <pre><code>P(v, h) = (1/Z) exp(-E(v, h) / T)</code></pre>
+                <LaTeX block math="P(v, h) = \frac{1}{Z} \exp(-E(v, h) / T)" />
                 <p>
                     where T is temperature and Z is the partition function (normalization constant):
                 </p>
-                <pre><code>Z = Σᵥ Σₕ exp(-E(v, h) / T)</code></pre>
+                <LaTeX block math="Z = \sum_v \sum_h \exp(-E(v, h) / T)" />
                 <p>
                     Lower energy states are exponentially more probable than high energy states.
                 </p>
@@ -57,7 +59,7 @@ export default function BoltzmannMachines() {
                 <p>
                     Unlike deterministic Hopfield networks, Boltzmann Machines update units stochastically:
                 </p>
-                <pre><code>P(sᵢ = 1) = σ(Σⱼ wᵢⱼ sⱼ + bᵢ)</code></pre>
+                <LaTeX block math="P(s_i = 1) = \sigma\left(\sum_j w_{ij} s_j + b_i\right)" />
                 <p>
                     where σ is the logistic sigmoid function. This stochasticity allows the network to:
                 </p>
@@ -74,7 +76,7 @@ export default function BoltzmannMachines() {
                     Boltzmann Machines learn by maximizing the log-likelihood of the training data.
                     The weight update rule is:
                 </p>
-                <pre><code>Δwᵢⱼ ∝ ⟨sᵢ sⱼ⟩ₐₐₜₐ - ⟨sᵢ sⱼ⟩ₘₒₐₑₗ</code></pre>
+                <LaTeX block math="\Delta w_{ij} \propto \langle s_i s_j \rangle_{data} - \langle s_i s_j \rangle_{model}" />
                 <p>
                     This requires computing two expectations:
                 </p>

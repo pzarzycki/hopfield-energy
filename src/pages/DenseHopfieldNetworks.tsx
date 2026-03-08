@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function DenseHopfieldNetworks() {
     return (
         <div>
@@ -31,14 +33,14 @@ export default function DenseHopfieldNetworks() {
                 <p>
                     The energy function uses higher-order polynomial interactions:
                 </p>
-                <pre><code>E(ξ) = -log Σₙ exp(β ξᵀ Xₙ)</code></pre>
+                <LaTeX block math="E(\xi) = -\text{log} \sum_n \exp(\beta \xi^T X_n)" />
                 <p>
                     where:
                 </p>
                 <ul>
-                    <li>ξ is the current state (continuous-valued)</li>
-                    <li>Xₙ are stored patterns</li>
-                    <li>β controls the separation between energy levels</li>
+                    <li><LaTeX math="\xi" /> is the current state (continuous-valued)</li>
+                    <li><LaTeX math="X_n" /> are stored patterns</li>
+                    <li><LaTeX math="\beta" /> controls the separation between energy levels</li>
                 </ul>
                 <p>
                     This formulation is equivalent to the Log-Sum-Exp function, connecting to modern
@@ -51,7 +53,7 @@ export default function DenseHopfieldNetworks() {
                 <p>
                     The update rule is derived from minimizing the energy function:
                 </p>
-                <pre><code>ξ(t+1) = softmax(β X ξ(t))ᵀ X</code></pre>
+                <LaTeX block math="\xi(t+1) = \text{softmax}(\beta X \xi(t))^T X" />
                 <p>
                     This can be recognized as a form of <strong>attention mechanism</strong>:
                 </p>
@@ -96,15 +98,15 @@ export default function DenseHopfieldNetworks() {
                     The update rule of Dense Hopfield Networks is mathematically equivalent to
                     attention in Transformers:
                 </p>
-                <pre><code>Attention(Q, K, V) = softmax(QKᵀ / √d) V</code></pre>
+                <LaTeX block math="\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right) V" />
                 <p>
                     Mapping to Hopfield retrieval:
                 </p>
                 <ul>
-                    <li>Query Q ↔ Current state ξ</li>
-                    <li>Keys K ↔ Stored patterns X</li>
-                    <li>Values V ↔ Stored patterns X</li>
-                    <li>Temperature √d ↔ 1/β</li>
+                    <li>Query Q <LaTeX math="\leftrightarrow" /> Current state <LaTeX math="\xi" /></li>
+                    <li>Keys K <LaTeX math="\leftrightarrow" /> Stored patterns X</li>
+                    <li>Values V <LaTeX math="\leftrightarrow" /> Stored patterns X</li>
+                    <li>Temperature <LaTeX math="\sqrt{d} \leftrightarrow 1/\beta" /></li>
                 </ul>
                 <p>
                     This reveals that <strong>attention is a form of associative memory retrieval</strong>!
@@ -130,15 +132,15 @@ export default function DenseHopfieldNetworks() {
                     Dense Hopfield Networks can be integrated as layers in deep neural networks:
                 </p>
                 <h3>Hopfield Layer</h3>
-                <pre><code>class HopfieldLayer(nn.Module):
-                    def forward(self, ξ, X):
-                    # Compute attention weights
-                    scores = β * torch.matmul(ξ, X.T)
-                    weights = torch.softmax(scores, dim=-1)
+                <pre><code>{`class HopfieldLayer(nn.Module):
+    def forward(self, xi, X):
+        # Compute attention weights
+        scores = beta * torch.matmul(xi, X.T)
+        weights = torch.softmax(scores, dim=-1)
 
-                    # Retrieve weighted combination
-                    output = torch.matmul(weights, X)
-                    return output</code></pre>
+        # Retrieve weighted combination
+        output = torch.matmul(weights, X)
+        return output`}</code></pre>
 
                 <h3>Applications</h3>
                 <ul>

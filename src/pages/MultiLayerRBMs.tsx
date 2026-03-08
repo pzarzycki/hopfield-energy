@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function MultiLayerRBMs() {
     return (
         <div>
@@ -53,15 +55,17 @@ export default function MultiLayerRBMs() {
                 <p>
                     A typical DBN structure:
                 </p>
-                <pre><code>Input Layer (visible)
-                    ↕ (RBM 1)
-                    Hidden Layer 1
-                    ↕ (RBM 2)
-                    Hidden Layer 2
-                    ↕ (RBM 3)
-                    Hidden Layer 3
-                    ↕
-                    Top Layer (associative memory)</code></pre>
+                <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', whiteSpace: 'pre', textAlign: 'center', lineHeight: '1.6' }}>
+                    Input Layer (visible)<br />
+                    <LaTeX math="\updownarrow" /> (RBM 1)<br />
+                    Hidden Layer 1<br />
+                    <LaTeX math="\updownarrow" /> (RBM 2)<br />
+                    Hidden Layer 2<br />
+                    <LaTeX math="\updownarrow" /> (RBM 3)<br />
+                    Hidden Layer 3<br />
+                    <LaTeX math="\updownarrow" /><br />
+                    Top Layer (associative memory)
+                </div>
 
                 <h3>Directional Interpretation</h3>
                 <ul>
@@ -82,9 +86,9 @@ export default function MultiLayerRBMs() {
                 <p>
                     Joint probability distribution:
                 </p>
-                <pre><code>P(v, h¹, h², h³) = P(v|h¹) P(h¹|h²) P(h², h³)</code></pre>
+                <LaTeX block math="P(v, h^1, h^2, h^3) = P(v|h^1) P(h^1|h^2) P(h^2, h^3)" />
                 <p>
-                    where P(h², h³) is defined by the top-level RBM.
+                    where <LaTeX math="P(h^2, h^3)" /> is defined by the top-level RBM.
                 </p>
             </div>
 

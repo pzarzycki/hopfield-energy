@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function EnergyBasedModels() {
     return (
         <div>
@@ -13,7 +15,7 @@ export default function EnergyBasedModels() {
             <div className="content-card">
                 <h2>The Energy-Based Framework</h2>
                 <p>
-                    At the core of EBMs is the concept of an <strong>energy function</strong> E(x, y; θ):
+                    At the core of EBMs is the concept of an <strong>energy function</strong> <LaTeX math="E(x, y; \theta)" />:
                 </p>
                 <ul>
                     <li><strong>x:</strong> Input variables (observed data)</li>
@@ -39,7 +41,7 @@ export default function EnergyBasedModels() {
                 <p>
                     Inference is finding low-energy configurations:
                 </p>
-                <pre><code>y* = argmin_y E(x, y; θ)</code></pre>
+                <LaTeX block math="y^* = \text{argmin}_y E(x, y; \theta)" />
                 <p>
                     This framework is remarkably general and applies to diverse learning problems.
                 </p>
@@ -50,8 +52,8 @@ export default function EnergyBasedModels() {
                 <p>
                     EBMs connect to probability via the Gibbs distribution:
                 </p>
-                <pre><code>P(y | x) = exp(-E(x, y)) / Z(x)
-                    Z(x) = Σ_y exp(-E(x, y))</code></pre>
+                <LaTeX block math="P(y | x) = \frac{\exp(-E(x, y))}{Z(x)}" />
+                <LaTeX block math="Z(x) = \sum_y \exp(-E(x, y))" />
                 <p>
                     where Z(x) is the partition function. This means:
                 </p>
@@ -68,26 +70,26 @@ export default function EnergyBasedModels() {
                 <p>
                     Maximize probability of correct outputs:
                 </p>
-                <pre><code>𝓛_ML = -log P(y | x) = E(x, y) + log Z(x)</code></pre>
+                <LaTeX block math="\mathcal{L}_{ML} = -\log P(y | x) = E(x, y) + \log Z(x)" />
                 <p>
-                    Challenge: computing Z(x) is often intractable!
+                    Challenge: computing <LaTeX math="Z(x)" /> is often intractable!
                 </p>
 
                 <h3>Contrastive Methods</h3>
                 <p>
                     Push down energy of correct answers, pull up energy of incorrect ones:
                 </p>
-                <pre><code>𝓛 = E(x, y⁺) - E(x, y⁻)</code></pre>
+                <LaTeX block math="\mathcal{L} = E(x, y^+) - E(x, y^-)" />
                 <ul>
-                    <li>y⁺: positive example (correct answer)</li>
-                    <li>y⁻: negative example (contrastive sample)</li>
+                    <li><LaTeX math="y^+" />: positive example (correct answer)</li>
+                    <li><LaTeX math="y^-" />: negative example (contrastive sample)</li>
                 </ul>
 
                 <h3>Score Matching</h3>
                 <p>
                     Match the gradient of the energy function to data distribution:
                 </p>
-                <pre><code>𝓛_SM = ½ ||∇_x E(x) - ∇_x log p_data(x)||²</code></pre>
+                <LaTeX block math="\mathcal{L}_{SM} = \frac{1}{2} ||\nabla_x E(x) - \nabla_x \log p_{data}(x)||^2" />
                 <p>
                     Avoids computing the partition function entirely.
                 </p>
@@ -98,7 +100,7 @@ export default function EnergyBasedModels() {
 
                 <h3>Classical EBMs</h3>
                 <ul>
-                    <li><strong>Hopfield Networks:</strong> E = -Σᵢⱼ wᵢⱼ sᵢ sⱼ</li>
+                    <li><strong>Hopfield Networks:</strong> <LaTeX math="E = -\sum_{i,j} w_{ij} s_i s_j" /></li>
                     <li><strong>Boltzmann Machines:</strong> Stochastic EBMs with Boltzmann distribution</li>
                     <li><strong>CRFs (Conditional Random Fields):</strong> Structured output prediction</li>
                     <li><strong>Maximum Entropy Models:</strong> Feature-based EBMs</li>
@@ -130,19 +132,19 @@ export default function EnergyBasedModels() {
                     <tbody>
                         <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '0.75rem' }}>Linear Regression</td>
-                            <td style={{ padding: '0.75rem' }}>E(x,y) = ½||y - wᵀx||²</td>
+                            <td style={{ padding: '0.75rem' }}><LaTeX math="E(x,y) = \frac{1}{2}||y - w^Tx||^2" /></td>
                         </tr>
                         <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '0.75rem' }}>Logistic Regression</td>
-                            <td style={{ padding: '0.75rem' }}>E(x,y) = -y·wᵀx</td>
+                            <td style={{ padding: '0.75rem' }}><LaTeX math="E(x,y) = -y \cdot w^Tx" /></td>
                         </tr>
                         <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '0.75rem' }}>SVM</td>
-                            <td style={{ padding: '0.75rem' }}>E(x,y) = max(0, 1 - y·wᵀx)</td>
+                            <td style={{ padding: '0.75rem' }}><LaTeX math="E(x,y) = \max(0, 1 - y \cdot w^Tx)" /></td>
                         </tr>
                         <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '0.75rem' }}>Neural Networks</td>
-                            <td style={{ padding: '0.75rem' }}>E(x,y) = -f_θ(x, y)</td>
+                            <td style={{ padding: '0.75rem' }}><LaTeX math="E(x,y) = -f_\theta(x, y)" /></td>
                         </tr>
                     </tbody>
                 </table>
@@ -156,7 +158,7 @@ export default function EnergyBasedModels() {
 
                 <h3>Key Ideas</h3>
                 <ul>
-                    <li><strong>Score function:</strong> s(x) = -∇_x E(x) = ∇_x log p(x)</li>
+                    <li><strong>Score function:</strong> <LaTeX math="s(x) = -\nabla_x E(x) = \nabla_x \log p(x)" /></li>
                     <li><strong>Learn score instead of energy:</strong> Avoids partition function</li>
                     <li><strong>Langevin dynamics:</strong> Sample by following score gradients</li>
                     <li><strong>Noise conditioning:</strong> Multi-scale scores for better training</li>

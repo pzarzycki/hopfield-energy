@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import ScrollToTop from './components/ScrollToTop';
 import Introduction from './pages/Introduction';
 import HopfieldNetworks from './pages/HopfieldNetworks';
 import BoltzmannMachines from './pages/BoltzmannMachines';
@@ -12,6 +13,7 @@ import './App.css';
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Layout>
         <Routes>
           <Route path="/" element={<Introduction />} />

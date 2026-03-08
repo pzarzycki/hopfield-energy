@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function RestrictedBoltzmannMachines() {
     return (
         <div>
@@ -31,7 +33,7 @@ export default function RestrictedBoltzmannMachines() {
                 <p>
                     The energy of an RBM configuration is:
                 </p>
-                <pre><code>E(v, h) = -Σᵢⱼ vᵢ wᵢⱼ hⱼ - Σᵢ aᵢ vᵢ - Σⱼ bⱼ hⱼ</code></pre>
+                <LaTeX block math="E(v, h) = -\sum_{i,j} v_i w_{ij} h_j - \sum_i a_i v_i - \sum_j b_j h_j" />
                 <p>
                     where:
                 </p>
@@ -49,13 +51,13 @@ export default function RestrictedBoltzmannMachines() {
                     The bipartite structure creates a crucial property: <strong>conditional independence</strong>.
                     Given one layer, all units in the other layer are independent:
                 </p>
-                <pre><code>P(h | v) = ∏ⱼ P(hⱼ | v)
-                    P(v | h) = ∏ᵢ P(vᵢ | h)</code></pre>
+                <LaTeX block math="P(h | v) = \prod_j P(h_j | v)" />
+                <LaTeX block math="P(v | h) = \prod_i P(v_i | h)" />
                 <p>
                     This allows parallel computation of all units in a layer:
                 </p>
-                <pre><code>P(hⱼ = 1 | v) = σ(Σᵢ wᵢⱼ vᵢ + bⱼ)
-                    P(vᵢ = 1 | h) = σ(Σⱼ wᵢⱼ hⱼ + aᵢ)</code></pre>
+                <LaTeX block math="P(h_j = 1 | v) = \sigma\left(\sum_i w_{ij} v_i + b_j\right)" />
+                <LaTeX block math="P(v_i = 1 | h) = \sigma\left(\sum_j w_{ij} h_j + a_i\right)" />
             </div>
 
             <div className="content-card">
@@ -72,7 +74,7 @@ export default function RestrictedBoltzmannMachines() {
                     <li>Reconstruct visible: v¹ ~ P(v | h⁰)</li>
                     <li>Recompute hidden: h¹ ~ P(h | v¹)</li>
                     <li>Repeat steps 4-5 for k iterations (typically k=1)</li>
-                    <li>Update weights: Δw ∝ ⟨v⁰h⁰⟩ₐₐₜₐ - ⟨vᵏhᵏ⟩ₘₒₐₑₗ</li>
+                    <li>Update weights: <LaTeX math="\Delta w \propto \langle v^0 h^0 \rangle_{data} - \langle v^k h^k \rangle_{model}" /></li>
                 </ol>
                 <p>
                     CD-1 (k=1) is remarkably effective despite being an approximation.
@@ -82,9 +84,9 @@ export default function RestrictedBoltzmannMachines() {
             <div className="content-card">
                 <h2>Training Details</h2>
                 <h3>Weight Update Rule</h3>
-                <pre><code>Δwᵢⱼ = ε (⟨vᵢ hⱼ⟩ₐₐₜₐ - ⟨vᵢ hⱼ⟩ᵣₑ꜀ₒₙ)
-                    Δaᵢ = ε (⟨vᵢ⟩ₐₐₜₐ - ⟨vᵢ⟩ᵣₑ꜀ₒₙ)
-                    Δbⱼ = ε (⟨hⱼ⟩ₐₐₜₐ - ⟨hⱼ⟩ᵣₑ꜀ₒₙ)</code></pre>
+                <LaTeX block math="\Delta w_{ij} = \epsilon (\langle v_i h_j \rangle_{data} - \langle v_i h_j \rangle_{recon})" />
+                <LaTeX block math="\Delta a_i = \epsilon (\langle v_i \rangle_{data} - \langle v_i \rangle_{recon})" />
+                <LaTeX block math="\Delta b_j = \epsilon (\langle h_j \rangle_{data} - \langle h_j \rangle_{recon})" />
 
                 <h3>Common Enhancements</h3>
                 <ul>

@@ -1,3 +1,5 @@
+import LaTeX from '../components/LaTeX';
+
 export default function Introduction() {
     return (
         <div>
@@ -19,7 +21,7 @@ export default function Introduction() {
                     algorithms and neural architectures.
                 </p>
                 <p>
-                    The key concept is the <strong>energy function</strong> E(x), which maps any
+                    The key concept is the <strong>energy function</strong> <LaTeX math="E(x)" />, which maps any
                     configuration of variables to a scalar value. During training, the model learns
                     to shape this energy landscape such that desired patterns occupy low-energy states.
                 </p>

@@ -8,22 +8,22 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 280px;
+  width: 240px;
   height: 100vh;
   background: var(--sidebar-bg);
-  padding: 2rem 0;
+  padding: 1.5rem 0;
   z-index: 1000;
   overflow-y: auto;
 }
 
 .sidebar-header {
-  padding: 0 2rem 2rem;
+  padding: 0 1.25rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .sidebar-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--sidebar-text-active);
   margin: 0;
@@ -34,13 +34,13 @@
 
 .sidebar-title::before {
   content: '⚡';
-  font-size: 1.75rem;
+  font-size: 1.5rem;
 }
 
 .sidebar-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--sidebar-text);
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
   font-weight: 400;
 }
 
@@ -51,15 +51,16 @@
 }
 
 .sidebar-nav li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
 }
 
 .sidebar-nav a {
   display: block;
-  padding: 0.875rem 2rem;
+  padding: 0.65rem 1.25rem;
   color: var(--sidebar-text);
   text-decoration: none;
   font-weight: 500;
+  font-size: 0.9rem;
   transition: var(--transition);
   border-left: 3px solid transparent;
   position: relative;
@@ -79,20 +80,20 @@
 .sidebar-nav a.active::before {
   content: '';
   position: absolute;
-  right: 2rem;
+  right: 1.25rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--sidebar-accent);
   border-radius: 50%;
 }
 
 /* Main Content Area */
 .main-content {
-  margin-left: 280px;
+  margin-left: 240px;
   flex: 1;
-  padding: 3rem 4rem;
+  padding: 2.5rem 3rem;
   background: var(--bg-secondary);
   min-height: 100vh;
 }
@@ -107,7 +108,7 @@
 }
 
 .page-title {
-  font-size: 3rem;
+  font-size: 2.25rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 1rem;
@@ -127,10 +128,10 @@
 }
 
 .page-intro {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   color: var(--text-secondary);
-  line-height: 1.8;
-  margin-top: 2rem;
+  line-height: 1.7;
+  margin-top: 1.5rem;
 }
 
 /* Mobile Hamburger Menu */
