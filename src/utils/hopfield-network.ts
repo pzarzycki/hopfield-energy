@@ -38,12 +38,26 @@ export class HopfieldNetwork {
             }
         }
 
-        // Hebbian learning: w_ij = (1/N) * Σ(x_i^p * x_j^p)
-        for (const pattern of patterns) {
+        // Calculate mean activity for each neuron across all patterns
+        const means = new Array(this.size).fill(0);
+        for (let i = 0; i < this.size; i++) {
+            for (const pattern of patterns) {
+                means[i] += pattern[i];
+            }
+            means[i] /= numPatterns;
+        }
+
+        // Center the patterns: ξ~ = ξ - m
+        const centeredPatterns = patterns.map(pattern => 
+            pattern.map((val, i) => val - means[i])
+        );
+
+        // Zero-mean Hebbian learning: w_ij = (1/N) * Σ(ξ~_i^p * ξ~_j^p)
+        for (const centered of centeredPatterns) {
             for (let i = 0; i < this.size; i++) {
                 for (let j = 0; j < this.size; j++) {
                     if (i !== j) { // No self-connections
-                        this.weights[i][j] += (pattern[i] * pattern[j]) / numPatterns;
+                        this.weights[i][j] += (centered[i] * centered[j]) / numPatterns;
                     }
                 }
             }
@@ -96,14 +110,16 @@ export class HopfieldNetwork {
         return changed;
     }
 
-    // Perform one update step (update multiple random neurons)
+    // Perform one update step (update ALL neurons in random order)
     step(): NetworkState {
-        // Update 10 random neurons per step for faster convergence
-        const numUpdates = Math.min(10, this.size);
-        for (let i = 0; i < numUpdates; i++) {
-            const neuronIndex = Math.floor(Math.random() * this.size);
-            this.updateNeuron(neuronIndex);
+        // Shuffle neuron indices for random asynchronous update order
+        const indices = Array.from({ length: this.size }, (_, i) => i);
+        this.shuffleArray(indices);
+
+        for (const idx of indices) {
+            this.updateNeuron(idx);
         }
+
         this.stepCount++;
 
         const currentEnergy = this.computeEnergy(this.currentState);
@@ -117,67 +133,15 @@ export class HopfieldNetwork {
         return state;
     }
 
-    // Perform multiple update steps
-    stepMultiple(numSteps: number): NetworkState[] {
-        const states: NetworkState[] = [];
-        for (let i = 0; i < numSteps; i++) {
-            states.push(this.step());
-        }
-        return states;
-    }
-
-    // Run until convergence or max steps
-    converge(maxSteps: number = 1000): NetworkState[] {
-        const states: NetworkState[] = [];
-        let changed = true;
-        let steps = 0;
-
-        while (changed && steps < maxSteps) {
-            const prevState = [...this.currentState];
-
-            // Update all neurons once in random order
-            const indices = Array.from({ length: this.size }, (_, i) => i);
-            this.shuffleArray(indices);
-
-            for (const idx of indices) {
-                this.updateNeuron(idx);
-            }
-
-            this.stepCount++;
-            const currentEnergy = this.computeEnergy(this.currentState);
-            const state: NetworkState = {
-                state: [...this.currentState],
-                energy: currentEnergy,
-                step: this.stepCount
-            };
-
-            this.history.push(state);
-            states.push(state);
-
-            // Check if state changed
-            changed = !this.arraysEqual(prevState, this.currentState);
-            steps++;
-        }
-
-        return states;
-    }
-
-    // Check if network has converged (stable for last 5 steps)
+    // Check if network has converged (stable for last 2 steps)
     hasConverged(): boolean {
-        const minSteps = 5;
-        if (this.history.length < minSteps) return false;
+        if (this.history.length < 2) return false;
 
         const len = this.history.length;
-        const current = this.history[len - 1].state;
-
-        // Check if state has been stable for last 5 steps
-        for (let i = 2; i <= minSteps; i++) {
-            if (!this.arraysEqual(current, this.history[len - i].state)) {
-                return false;
-            }
-        }
-
-        return true;
+        return this.arraysEqual(
+            this.history[len - 1].state,
+            this.history[len - 2].state
+        );
     }
 
     // Find which memory pattern the current state is closest to
@@ -224,20 +188,6 @@ export class HopfieldNetwork {
         }
     }
 
-    // Get network statistics
-    getStats() {
-        return {
-            size: this.size,
-            numMemories: this.memories.length,
-            currentStep: this.stepCount,
-            currentEnergy: this.history.length > 0
-                ? this.history[this.history.length - 1].energy
-                : 0,
-            hasConverged: this.hasConverged(),
-            matchedPattern: this.getMatchedPattern()
-        };
-    }
-
     // Reset to a specific history step
     resetToStep(stepIndex: number): void {
         if (stepIndex >= 0 && stepIndex < this.history.length) {
@@ -246,11 +196,6 @@ export class HopfieldNetwork {
             this.stepCount = targetState.step;
             this.history = this.history.slice(0, stepIndex + 1);
         }
-    }
-
-    // Get memories
-    getMemories(): number[][] {
-        return this.memories;
     }
 
     // Get current energy

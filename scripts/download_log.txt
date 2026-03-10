@@ -1,0 +1,29 @@
+=== MNIST ===
+Using cached C:\PRJ\hopfield-energy\scripts\.dataset_cache\mnist-train-images.gz
+Using cached C:\PRJ\hopfield-energy\scripts\.dataset_cache\mnist-train-labels.gz
+Loaded 60000 images (28x28)
+  Class 5: found at index
+  Class 0: found at index
+  Class 4: found at index
+  Class 1: found at index
+  Class 9: found at index
+  Class 2: found at index
+  Class 3: found at index
+  Class 6: found at index
+  Class 7: found at index
+  Class 8: found at index
+
+=== Fashion-MNIST ===
+Using cached C:\PRJ\hopfield-energy\scripts\.dataset_cache\fashion-train-images.gz
+Using cached C:\PRJ\hopfield-energy\scripts\.dataset_cache\fashion-train-labels.gz
+Loaded 60000 images (28x28)
+  Class 9: found at index
+  Class 0: found at index
+  Class 3: found at index
+  Class 2: found at index
+  Class 7: found at index
+  Class 5: found at index
+  Class 1: found at index
+  Class 6: found at index
+  Class 4: found at index
+  Class 8: found at index

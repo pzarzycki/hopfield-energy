@@ -1,0 +1,9 @@
+Model list we are considering in this project:
+
+1) Hopfield Network
+2) Boltzmann Machine
+3) Restricted Boltzmann Machine
+4) Dense Associative Memory
+5) Modern Hopfield Network
+6) Transformer Attention
+7) JEPA
