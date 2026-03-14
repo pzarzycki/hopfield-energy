@@ -1,9 +1,10 @@
-import type { HopfieldInitResult, HopfieldSnapshot, UpdateRule } from "./hopfield";
+import type { HopfieldInitResult, HopfieldSnapshot } from "./hopfield";
+import type { ConvergenceRuleConfig, LearningRuleConfig } from "./hopfieldRules";
 
 export interface WorkerInitializeMessage {
   type: "initialize";
   patternSetId: string;
-  updateRule: UpdateRule;
+  learningConfig: LearningRuleConfig;
 }
 
 export interface WorkerSetQueryMessage {
@@ -13,10 +14,12 @@ export interface WorkerSetQueryMessage {
 
 export interface WorkerStepMessage {
   type: "step";
+  convergenceConfig: ConvergenceRuleConfig;
 }
 
 export interface WorkerPlayMessage {
   type: "play";
+  convergenceConfig: ConvergenceRuleConfig;
   intervalMs: number;
   maxSteps: number;
 }

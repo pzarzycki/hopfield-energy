@@ -12,6 +12,7 @@ interface PatternCanvasProps {
 const DEFAULT_SCALE = 12;
 const ON_COLOR = "#131827";
 const OFF_COLOR = "#eff3fb";
+const UNKNOWN_COLOR = "#cbd5e7";
 const GRID_COLOR = "rgba(44, 62, 104, 0.18)";
 
 function copyPattern(pattern: Int8Array): Int8Array {
@@ -31,8 +32,8 @@ export function PatternCanvas({
 
   const canvasSize = useMemo(() => PATTERN_SIDE * scale, [scale]);
 
-  function drawCell(context: CanvasRenderingContext2D, x: number, y: number, active: boolean): void {
-    context.fillStyle = active ? ON_COLOR : OFF_COLOR;
+  function drawCell(context: CanvasRenderingContext2D, x: number, y: number, value: number): void {
+    context.fillStyle = value === 1 ? ON_COLOR : value === 0 ? UNKNOWN_COLOR : OFF_COLOR;
     context.fillRect(x * scale, y * scale, scale, scale);
 
     context.strokeStyle = GRID_COLOR;
@@ -56,7 +57,7 @@ export function PatternCanvas({
     for (let row = 0; row < PATTERN_SIDE; row += 1) {
       for (let column = 0; column < PATTERN_SIDE; column += 1) {
         const index = row * PATTERN_SIDE + column;
-        drawCell(context, column, row, source[index] === 1);
+        drawCell(context, column, row, source[index]);
       }
     }
   }
@@ -109,7 +110,7 @@ export function PatternCanvas({
       return;
     }
 
-    drawCell(context, x, y, true);
+    drawCell(context, x, y, 1);
   }
 
   function paintStroke(from: { x: number; y: number } | null, to: { x: number; y: number } | null): void {

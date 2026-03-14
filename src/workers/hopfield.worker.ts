@@ -28,7 +28,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       pausePlayback();
 
       const patternSet = getPatternSetById(message.patternSetId);
-      const init = engine.train(patternSet.patterns, message.updateRule);
+      const init = engine.train(patternSet.patterns, message.learningConfig);
       initialState = createBlankPattern();
       const snapshot = engine.setState(initialState);
 
@@ -60,7 +60,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 
     if (message.type === "step") {
       pausePlayback();
-      const snapshot = engine.step();
+      const snapshot = engine.step(message.convergenceConfig);
       post({ type: "snapshot", snapshot }, [snapshot.state.buffer]);
       return;
     }
@@ -70,7 +70,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 
       let iteration = 0;
       playTimer = self.setInterval(() => {
-        const snapshot = engine.step();
+        const snapshot = engine.step(message.convergenceConfig);
         post({ type: "snapshot", snapshot }, [snapshot.state.buffer]);
 
         iteration += 1;
