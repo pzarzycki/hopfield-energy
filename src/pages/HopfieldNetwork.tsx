@@ -277,7 +277,7 @@ function learningConfigToNumber<T extends "kappa" | "epsilon" | "maxEpochs" | "s
   config: LearningRuleConfig,
   key: T,
 ): number {
-  return key in config ? Number(config[key]) : 0;
+  return key in config ? Number(config[key as keyof LearningRuleConfig]) : 0;
 }
 
 function speedLabelValue(speed: number): string {

@@ -677,9 +677,10 @@ button {
 
 .weight-heatmap {
   aspect-ratio: 1;
-  height: auto;
   image-rendering: pixelated;
   border-radius: 0;
+  flex: 0 0 auto;
+  max-width: none;
 }
 
 .energy-plot {
@@ -744,6 +745,54 @@ button {
 .gallery-item.is-matched {
   border-color: rgba(36, 88, 211, 0.28);
   box-shadow: 0 0 0 1px rgba(36, 88, 211, 0.12);
+}
+
+.attention-list {
+  display: grid;
+  gap: 6px;
+}
+
+.attention-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 52px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.attention-item.is-active {
+  border-color: rgba(36, 88, 211, 0.28);
+  box-shadow: 0 0 0 1px rgba(36, 88, 211, 0.12);
+}
+
+.attention-item__label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted-strong);
+}
+
+.attention-item__bar {
+  position: relative;
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(36, 88, 211, 0.08);
+}
+
+.attention-item__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-deep) 100%);
+}
+
+.attention-item strong {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-align: right;
 }
 
 .run-stats {

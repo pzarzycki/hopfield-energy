@@ -1,8 +1,14 @@
 """
 Assemble mnist-data.ts from base64-encoded dataset output.
 """
+from pathlib import Path
 
-with open('scripts/dataset_output.ts', 'r') as f:
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPT_DIR.parent
+DATASET_OUTPUT = SCRIPT_DIR / 'dataset_output.ts'
+MNIST_DATA = ROOT / 'src' / 'utils' / 'mnist-data.ts'
+
+with open(DATASET_OUTPUT, 'r') as f:
     data = f.read().strip()
 
 header = """// Real MNIST + Fashion-MNIST samples. Base64-encoded grayscale (0-255).
@@ -116,7 +122,7 @@ export const binaryToBipolar = (pattern: number[]): number[] => {
 };
 """
 
-with open('src/utils/mnist-data.ts', 'w', newline='\n') as f:
+with open(MNIST_DATA, 'w', newline='\n') as f:
     f.write(header)
     f.write(data)
     f.write(footer)

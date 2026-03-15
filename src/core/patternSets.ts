@@ -1,3 +1,5 @@
+import { getDatasetSamples, getFashionLabel, grayscaleToBipolar } from "../utils/mnist-data";
+
 export const PATTERN_SIDE = 28;
 export const PATTERN_SIZE = PATTERN_SIDE * PATTERN_SIDE;
 
@@ -281,7 +283,32 @@ function buildOrthogonalHatchPatternSet(): PatternSetDefinition {
   };
 }
 
+function buildRealDatasetPatternSet(dataset: "mnist" | "fashion-mnist"): PatternSetDefinition {
+  const samples = getDatasetSamples(dataset);
+  const labels =
+    dataset === "mnist" ? samples.map((sample) => String(sample.label)) : samples.map((sample) => getFashionLabel(sample.label));
+  const patterns = samples.map((sample) => Int8Array.from(grayscaleToBipolar(sample.pattern, 128)));
+  const maxCorrelation = Math.max(
+    ...patterns.flatMap((pattern, patternIndex) =>
+      patterns.slice(patternIndex + 1).map((otherPattern) => Math.abs(normalizedCorrelation(pattern, otherPattern))),
+    ),
+  );
+
+  return {
+    id: dataset,
+    name: dataset === "mnist" ? "MNIST" : "Fashion-MNIST",
+    description:
+      dataset === "mnist"
+        ? `Real grayscale MNIST exemplars, binarized at threshold 128 for classical Hopfield storage. Max pairwise correlation ${maxCorrelation.toFixed(2)}.`
+        : `Real grayscale Fashion-MNIST exemplars, binarized at threshold 128 for classical Hopfield storage. Max pairwise correlation ${maxCorrelation.toFixed(2)}.`,
+    labels,
+    patterns,
+  };
+}
+
 export const PATTERN_SETS: PatternSetDefinition[] = [
+  buildRealDatasetPatternSet("mnist"),
+  buildRealDatasetPatternSet("fashion-mnist"),
   buildOrthogonalHatchPatternSet(),
   buildDigitPatternSet(),
   buildShapePatternSet(),

@@ -1,3 +1,12 @@
+// Real MNIST + Fashion-MNIST samples. Base64-encoded grayscale (0-255).
+// MNIST: https://storage.googleapis.com/cvdf-datasets/mnist/
+// Fashion-MNIST: http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/
+
+export interface MNISTSample {
+  label: number;
+  pattern: number[];  // grayscale 0-255
+}
+
 // Auto-generated. Base64-encoded grayscale 28x28 images (784 bytes each).
 
 const B64_DIGITS: string[] = [
@@ -25,3 +34,100 @@ const B64_FASHION: string[] = [
   "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",
 ];
+
+// Decode base64 string to number array
+function decodeB64(b64: string): number[] {
+  const bin = atob(b64);
+  const arr = new Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// Decoded caches
+let _digits: number[][] | null = null;
+let _fashion: number[][] | null = null;
+
+function getDigits(): number[][] {
+  if (!_digits) _digits = B64_DIGITS.map(decodeB64);
+  return _digits;
+}
+function getFashion(): number[][] {
+  if (!_fashion) _fashion = B64_FASHION.map(decodeB64);
+  return _fashion;
+}
+
+export const getMNISTDigits = (): MNISTSample[] => {
+  const d = getDigits();
+  return d.map((pattern, i) => ({ label: i, pattern }));
+};
+
+// Render pattern to ImageData — handles both grayscale (0-255) and bipolar (-1/1)
+export const patternToImageData = (pattern: number[]): ImageData => {
+  const size = Math.sqrt(pattern.length);
+  const imageData = new ImageData(size, size);
+  const isBipolar = pattern.some(v => v < 0);
+
+  for (let i = 0; i < pattern.length; i++) {
+    const px = i * 4;
+    let value: number;
+    if (isBipolar) {
+      value = pattern[i] === 1 ? 0 : 255;
+    } else {
+      value = 255 - pattern[i];
+    }
+    imageData.data[px] = value;
+    imageData.data[px + 1] = value;
+    imageData.data[px + 2] = value;
+    imageData.data[px + 3] = 255;
+  }
+  return imageData;
+};
+
+export const imageDataToPattern = (imageData: ImageData): number[] => {
+  const pattern: number[] = [];
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    pattern.push(255 - imageData.data[i]);
+  }
+  return pattern;
+};
+
+// Convert grayscale [0-255] to bipolar [-1, 1]
+export const grayscaleToBipolar = (pattern: number[], threshold = 128): number[] => {
+  return pattern.map(v => v >= threshold ? 1 : -1);
+};
+
+// Convert bipolar [-1, 1] to grayscale [0, 255]
+export const bipolarToGrayscale = (pattern: number[]): number[] => {
+  return pattern.map(v => v === 1 ? 255 : 0);
+};
+
+export const addNoise = (pattern: number[], noiseLevel: number): number[] => {
+  return pattern.map(value => {
+    if (Math.random() < noiseLevel) return 255 - value;
+    return value;
+  });
+};
+
+const fashionLabels: Record<number, string> = {
+  0: 'T-shirt', 1: 'Trouser', 2: 'Pullover', 3: 'Dress', 4: 'Coat',
+  5: 'Sandal', 6: 'Shirt', 7: 'Sneaker', 8: 'Bag', 9: 'Boot',
+};
+
+export const getFashionLabel = (index: number): string => {
+  return fashionLabels[index] || `Item ${index}`;
+};
+
+export const getDatasetSamples = (dataset: 'mnist' | 'fashion-mnist'): MNISTSample[] => {
+  const source = dataset === 'fashion-mnist' ? getFashion() : getDigits();
+  return source.map((pattern, i) => ({ label: i, pattern }));
+};
+
+export type MNISTDigit = MNISTSample;
+
+export const bipolarToBinary = (pattern: number[]): number[] => {
+  return pattern.map(v => v === 1 ? 1 : 0);
+};
+
+export const binaryToBipolar = (pattern: number[]): number[] => {
+  return pattern.map(v => v === 1 ? 1 : -1);
+};

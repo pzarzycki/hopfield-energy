@@ -39,6 +39,18 @@ export function writePatternImage(target: Uint8ClampedArray, pattern: Int8Array 
   }
 }
 
+export function writeGrayscaleImage(target: Uint8ClampedArray, pattern: Float32Array | Uint8Array): void {
+  for (let index = 0; index < pattern.length; index += 1) {
+    const offset = index * 4;
+    const value = clamp(Number(pattern[index]), 0, 1);
+    const shade = Math.round(247 - value * 220);
+    target[offset] = shade;
+    target[offset + 1] = shade;
+    target[offset + 2] = shade;
+    target[offset + 3] = 255;
+  }
+}
+
 export function writeWeightHeatmap(target: Uint8ClampedArray, matrix: Float32Array, maxAbs: number): void {
   for (let index = 0; index < matrix.length; index += 1) {
     const [red, green, blue] = divergingColor(matrix[index], maxAbs);

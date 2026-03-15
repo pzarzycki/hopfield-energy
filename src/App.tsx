@@ -1,6 +1,7 @@
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 
 import "./App.css";
+import DenseHopfieldNetworkPage from "./pages/DenseHopfieldNetwork";
 import HopfieldNetworkPage from "./pages/HopfieldNetwork";
 import { PlaceholderNetworkPage } from "./pages/PlaceholderNetwork";
 
@@ -32,16 +33,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/networks/hopfield-network" replace />} />
         <Route path="/networks/hopfield-network" element={<HopfieldNetworkPage />} />
-        <Route
-          path="/networks/dense-hopfield-network"
-          element={
-            <PlaceholderNetworkPage
-              title="Dense Hopfield Network"
-              urlPath="/networks/dense-hopfield-network"
-              description="Placeholder page. Dense Hopfield Network is not implemented yet."
-            />
-          }
-        />
+        <Route path="/networks/dense-hopfield-network" element={<DenseHopfieldNetworkPage />} />
         <Route
           path="/networks/boltzmann-machine"
           element={

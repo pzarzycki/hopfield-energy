@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
-import { divergingColor, writePatternImage, writeWeightHeatmap } from "../../core/colorMaps";
+import { divergingColor, writeGrayscaleImage, writePatternImage, writeWeightHeatmap } from "../../core/colorMaps";
 
 interface PatternHeatmapProps {
   title: string;
@@ -17,6 +17,7 @@ interface WeightHeatmapProps {
   data: Float32Array;
   side: number;
   maxAbs: number;
+  scale?: number;
   caption?: string;
   xLabel?: string;
   yLabel?: string;
@@ -27,6 +28,16 @@ interface ValueGridHeatmapProps {
   data: Int8Array | Float32Array;
   side: number;
   maxAbs: number;
+  scale?: number;
+  caption?: string;
+  xLabel?: string;
+  yLabel?: string;
+}
+
+interface GrayscaleHeatmapProps {
+  title: string;
+  data: Float32Array | Uint8Array;
+  side: number;
   scale?: number;
   caption?: string;
   xLabel?: string;
@@ -110,6 +121,7 @@ export function WeightHeatmap({
   data,
   side,
   maxAbs,
+  scale = 1,
   caption,
   xLabel = "neuron j",
   yLabel = "neuron i",
@@ -151,13 +163,71 @@ export function WeightHeatmap({
         {caption ? <p>{caption}</p> : null}
       </div>
       <AxisFrame xLabel={xLabel} yLabel={yLabel}>
-        <canvas ref={canvasRef} width={side} height={side} className="heatmap-canvas weight-heatmap" />
+        <canvas
+          ref={canvasRef}
+          width={side}
+          height={side}
+          className="heatmap-canvas weight-heatmap"
+          style={{ width: `${side * scale}px`, height: `${side * scale}px` }}
+        />
       </AxisFrame>
       <div className="legend legend--weights">
         <span>negative</span>
         <span className="legend-bar" aria-hidden="true" />
         <span>positive</span>
       </div>
+    </section>
+  );
+}
+
+export function GrayscaleHeatmap({
+  title,
+  data,
+  side,
+  scale = 10,
+  caption,
+  xLabel = "grid x",
+  yLabel = "grid y",
+}: GrayscaleHeatmapProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imageBuffer = useMemo(() => new Uint8ClampedArray(data.length * 4), [data]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    writeGrayscaleImage(imageBuffer, data);
+    const imageData = new ImageData(imageBuffer, side, side);
+    const bitmapCanvas = document.createElement("canvas");
+    bitmapCanvas.width = side;
+    bitmapCanvas.height = side;
+    const bitmapContext = bitmapCanvas.getContext("2d");
+    if (!bitmapContext) {
+      return;
+    }
+
+    bitmapContext.putImageData(imageData, 0, 0);
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmapCanvas, 0, 0, canvas.width, canvas.height);
+  }, [data, imageBuffer, side]);
+
+  return (
+    <section className="panel">
+      <div className="panel-header">
+        <h3>{title}</h3>
+        {caption ? <p>{caption}</p> : null}
+      </div>
+      <AxisFrame xLabel={xLabel} yLabel={yLabel}>
+        <canvas ref={canvasRef} width={side * scale} height={side * scale} className="heatmap-canvas pattern-heatmap" />
+      </AxisFrame>
     </section>
   );
 }
