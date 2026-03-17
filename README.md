@@ -3,6 +3,7 @@
 Interactive and terminal-testable implementations of classical and modern energy-based memory models, from Hopfield networks to RBMs and Dense Associative Memory.
 
 🚀 **Live Demo:** [https://pzarzycki.github.io/hopfield-energy/](https://pzarzycki.github.io/hopfield-energy/)
+[![GitHub Pages CI](https://github.com/pzarzycki/hopfield-energy/actions/workflows/deploy.yml/badge.svg)](https://github.com/pzarzycki/hopfield-energy/actions/workflows/deploy.yml)
 
 ## Overview
 
