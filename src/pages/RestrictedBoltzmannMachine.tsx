@@ -846,7 +846,7 @@ export default function RestrictedBoltzmannMachinePage() {
                       <input
                         type="range"
                         min="0"
-                        max="100"
+                        max="50"
                         value={corruptionLevel}
                         onChange={(event) => setCorruptionLevel(Number(event.target.value))}
                         title={visibleModel === "bernoulli" ? "Flip a percentage of the selected pixels before loading the query" : "Invert intensity on a percentage of the selected pixels before loading the query"}
@@ -858,7 +858,7 @@ export default function RestrictedBoltzmannMachinePage() {
                       <input
                         type="range"
                         min="0"
-                        max="100"
+                        max="50"
                         value={obfuscationLevel}
                         onChange={(event) => setObfuscationLevel(Number(event.target.value))}
                         title="Set part of the selected exemplar to zero before playback"

@@ -966,12 +966,12 @@ export default function HopfieldNetworkPage() {
                   <div className="query-toolbar--row">
                     <label className="field compact-field">
                       <span>Corruption</span>
-                      <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Randomly flip bipolar values before loading into the query editor" />
+                      <input type="range" min="0" max="50" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Randomly flip bipolar values before loading into the query editor" />
                       <strong className="range-value">{corruptionLevel}%</strong>
                     </label>
                     <label className="field compact-field">
                       <span>Obfuscation</span>
-                      <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the loaded pattern to zero before retrieval" />
+                      <input type="range" min="0" max="50" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the loaded pattern to zero before retrieval" />
                       <strong className="range-value">{obfuscationLevel}%</strong>
                     </label>
                   </div>

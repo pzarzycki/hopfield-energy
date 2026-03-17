@@ -483,12 +483,12 @@ export default function DenseHopfieldNetworkPage() {
                 <div className="query-toolbar--row">
                   <label className="field compact-field">
                     <span>Corruption</span>
-                    <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Invert intensity on a portion of the selected memory before loading it into the query editor" />
+                    <input type="range" min="0" max="50" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Invert intensity on a portion of the selected memory before loading it into the query editor" />
                     <strong className="range-value">{corruptionLevel}%</strong>
                   </label>
                   <label className="field compact-field">
                     <span>Obfuscation</span>
-                    <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the selected memory to zero before retrieval" />
+                    <input type="range" min="0" max="50" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the selected memory to zero before retrieval" />
                     <strong className="range-value">{obfuscationLevel}%</strong>
                   </label>
                 </div>
