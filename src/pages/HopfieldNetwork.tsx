@@ -802,7 +802,7 @@ export default function HopfieldNetworkPage() {
   const convergenceHelpContent = getConvergenceHelpContent(convergenceConfig, speed, maxPlaybackSteps);
 
   return (
-    <div className="page-shell">
+    <div className="page-shell hopfield-page">
       <header className="hero">
         <div>
           <p className="eyebrow">Wasm-backed worker runtime</p>
@@ -811,7 +811,7 @@ export default function HopfieldNetworkPage() {
             Typed-array Hopfield core, worker-driven convergence, editable 28x28 input, live neuron-state heatmap,
             and a full 784x784 connection matrix rendered in the client.
           </p>
-          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
+          <p className="hero-task"><strong>Primary task:</strong> {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card">

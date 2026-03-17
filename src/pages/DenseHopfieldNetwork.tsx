@@ -331,7 +331,7 @@ export default function DenseHopfieldNetworkPage() {
   const weightCount = memorySet ? memorySet.patterns.length * PATTERN_SIZE : 0;
 
   return (
-    <div className="page-shell">
+    <div className="page-shell dense-hopfield-page">
       <header className="hero">
         <div>
           <p className="eyebrow">Wasm-backed worker runtime</p>
@@ -340,7 +340,7 @@ export default function DenseHopfieldNetworkPage() {
             Continuous-state retrieval over bundled MNIST and Fashion-MNIST memories, with editable 28x28 queries,
             softmax attention dynamics, live reconstruction, and an in-browser memory affinity map.
           </p>
-          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
+          <p className="hero-task"><strong>Primary task:</strong> {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card">
@@ -461,65 +461,65 @@ export default function DenseHopfieldNetworkPage() {
         </div>
       </section>
 
-      <div className="dashboard-grid dashboard-grid--two-column">
-        <div className="main-column">
-          <section className="center-row">
-            <section className="panel input-panel">
-              <div className="panel-header">
-                <h3>Query</h3>
-                <p>Pick a stored memory, degrade it if needed, then edit the query directly before running retrieval.</p>
-              </div>
-              <div className="query-workbench">
-                <div className="query-toolbar">
-                  <div className="field compact-field">
-                    <span>Examples</span>
-                    <div className="pattern-picker pattern-picker--compact">
-                      {labels.map((label, index) => (
-                        <button key={label} type="button" onClick={() => handleLoadPattern(index)} title={`Load ${label}`}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="query-toolbar--row">
-                    <label className="field compact-field">
-                      <span>Corruption</span>
-                      <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Invert intensity on a portion of the selected memory before loading it into the query editor" />
-                      <strong className="range-value">{corruptionLevel}%</strong>
-                    </label>
-                    <label className="field compact-field">
-                      <span>Obfuscation</span>
-                      <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the selected memory to zero before retrieval" />
-                      <strong className="range-value">{obfuscationLevel}%</strong>
-                    </label>
+      <div className="dense-hopfield-workspace">
+        <div className="dense-hopfield-slot dense-hopfield-slot--query">
+          <section className="panel input-panel">
+            <div className="panel-header">
+              <h3>Query</h3>
+              <p>Pick a stored memory, degrade it if needed, then edit the query directly before running retrieval.</p>
+            </div>
+            <div className="query-workbench">
+              <div className="query-toolbar">
+                <div className="field compact-field">
+                  <span>Examples</span>
+                  <div className="pattern-picker pattern-picker--compact">
+                    {labels.map((label, index) => (
+                      <button key={label} type="button" onClick={() => handleLoadPattern(index)} title={`Load ${label}`}>
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <div className="input-grid">
-                  <GrayscaleCanvas pattern={queryPattern} onChange={handlePatternChange} />
-                  <div className="query-actions">
-                    <button type="button" onClick={handleClear} title="Clear the query editor">
-                      clear
-                    </button>
-                  </div>
+                <div className="query-toolbar--row">
+                  <label className="field compact-field">
+                    <span>Corruption</span>
+                    <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Invert intensity on a portion of the selected memory before loading it into the query editor" />
+                    <strong className="range-value">{corruptionLevel}%</strong>
+                  </label>
+                  <label className="field compact-field">
+                    <span>Obfuscation</span>
+                    <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the selected memory to zero before retrieval" />
+                    <strong className="range-value">{obfuscationLevel}%</strong>
+                  </label>
                 </div>
               </div>
-            </section>
-
-            {memorySet ? (
-              <WeightHeatmap
-                title="Memory similarity"
-                data={memorySet.similarityMatrix}
-                side={memorySet.patterns.length}
-                maxAbs={affinityMaxAbs}
-                caption="Pairwise similarity among stored memories. This is not a neuron-to-neuron connection matrix."
-                xLabel="memory j"
-                yLabel="memory i"
-              />
-            ) : null}
+              <div className="input-grid">
+                <GrayscaleCanvas pattern={queryPattern} onChange={handlePatternChange} />
+                <div className="query-actions">
+                  <button type="button" onClick={handleClear} title="Clear the query editor">
+                    clear
+                  </button>
+                </div>
+              </div>
+            </div>
           </section>
         </div>
 
-        <div className="right-column">
+        {memorySet ? (
+          <div className="dense-hopfield-slot dense-hopfield-slot--similarity">
+            <WeightHeatmap
+              title="Memory similarity"
+              data={memorySet.similarityMatrix}
+              side={memorySet.patterns.length}
+              maxAbs={affinityMaxAbs}
+              caption="Pairwise similarity among stored memories. This is not a neuron-to-neuron connection matrix."
+              xLabel="memory j"
+              yLabel="memory i"
+            />
+          </div>
+        ) : null}
+
+        <div className="dense-hopfield-slot dense-hopfield-slot--reconstruction">
           <GrayscaleHeatmap
             title="Current reconstruction"
             data={snapshot.state}
@@ -527,8 +527,17 @@ export default function DenseHopfieldNetworkPage() {
             scale={8}
             caption={`Step ${snapshot.step} • mean absolute update ${snapshot.delta.toFixed(4)}`}
           />
+        </div>
+
+        <div className="dense-hopfield-slot dense-hopfield-slot--attention">
           <AttentionPanel labels={labels} attention={snapshot.attention} matchedIndex={snapshot.matchedPatternIndex} />
+        </div>
+
+        <div className="dense-hopfield-slot dense-hopfield-slot--energy">
           <EnergyPlot values={energyHistory} />
+        </div>
+
+        <div className="dense-hopfield-slot dense-hopfield-slot--state">
           <section className="panel">
             <div className="panel-header">
               <h3>Run state</h3>

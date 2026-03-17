@@ -2,10 +2,86 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Comprehensive showcase of energy-based memory models including Hopfield Networks, Boltzmann Machines, and modern variants." />
+
+    <!-- Primary metadata -->
     <title>Energy-Based Memory Models</title>
+    <meta name="description" content="Interactive showcase of energy-based memory models: classical Hopfield Networks, modern Dense Associative Memory, Restricted Boltzmann Machines, and more." />
+    <meta name="author" content="Piotr Zarzycki" />
+    <meta name="keywords" content="Hopfield Network, Dense Associative Memory, Restricted Boltzmann Machine, energy-based models, neural networks, associative memory, machine learning, interactive demo" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#2458d3" />
+
+    <!-- Canonical URL — always points to the stable root so crawlers
+         don't 404 on deep SPA routes like /networks/hopfield-network -->
+    <link rel="canonical" href="https://pzarzycki.github.io/hopfield-energy/" />
+
+    <!-- Open Graph (LinkedIn, Facebook, Slack …) -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="Energy-Based Memory Models" />
+    <meta property="og:title"       content="Energy-Based Memory Models" />
+    <meta property="og:description" content="Interactive showcase of energy-based memory models: classical Hopfield Networks, modern Dense Associative Memory, Restricted Boltzmann Machines, and more." />
+    <meta property="og:url"         content="https://pzarzycki.github.io/hopfield-energy/" />
+    <meta property="og:image"            content="https://pzarzycki.github.io/hopfield-energy/img/rbm_screenshot.png" />
+    <meta property="og:image:secure_url" content="https://pzarzycki.github.io/hopfield-energy/img/rbm_screenshot.png" />
+    <meta property="og:image:type"       content="image/png" />
+    <meta property="og:image:alt"   content="Screenshot of the Restricted Boltzmann Machine demo showing learned feature filters." />
+    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale"      content="en_US" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="Energy-Based Memory Models" />
+    <meta name="twitter:description" content="Interactive showcase of energy-based memory models: classical Hopfield Networks, modern Dense Associative Memory, Restricted Boltzmann Machines, and more." />
+    <meta name="twitter:image"       content="https://pzarzycki.github.io/hopfield-energy/img/rbm_screenshot.png" />
+    <meta name="twitter:image:alt"   content="Screenshot of the Restricted Boltzmann Machine demo." />
+
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Energy-Based Memory Models",
+      "url": "https://pzarzycki.github.io/hopfield-energy/",
+      "description": "Interactive showcase of energy-based memory models: classical Hopfield Networks, modern Dense Associative Memory, Restricted Boltzmann Machines, and more.",
+      "author": { "@type": "Person", "name": "Piotr Zarzycki" },
+      "image": "https://pzarzycki.github.io/hopfield-energy/img/rbm_screenshot.png",
+      "applicationCategory": "EducationalApplication",
+      "inLanguage": "en"
+    }
+    </script>
+
+    <!-- Favicon — %BASE_URL% is substituted by Vite at build time -->
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%img/rbm_screenshot.png" />
+
+    <!--
+      GitHub Pages SPA path-restore — companion to public/404.html.
+      Runs before React mounts: if the URL contains ?p=<path> (written by
+      404.html after a deep-link 404), it silently rewrites the URL back to
+      the original path so React Router sees the correct location.
+    -->
+    <script>
+      (function () {
+        var search = window.location.search;
+        if (search.length > 1 && search[1] === 'p') {
+          var params = search.slice(1).split('&').reduce(function (acc, part) {
+            var kv = part.split('=');
+            acc[kv[0]] = kv.slice(1).join('=').replace(/~and~/g, '&');
+            return acc;
+          }, {});
+          if (params.p !== undefined) {
+            var restored =
+              window.location.pathname +
+              (params.p ? params.p : '') +
+              (params.q ? '?' + params.q : '') +
+              window.location.hash;
+            window.history.replaceState(null, null, restored);
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

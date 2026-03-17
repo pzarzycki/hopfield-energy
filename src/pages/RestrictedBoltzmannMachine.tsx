@@ -475,7 +475,7 @@ export default function RestrictedBoltzmannMachinePage() {
             Switchable Bernoulli and Gaussian visible-unit RBMs over one shared grayscale MNIST or Fashion-MNIST source,
             with Gibbs reconstruction, learned hidden features, and a live hidden-to-visible connectivity matrix.
           </p>
-          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
+          <p className="hero-task"><strong>Primary task:</strong> {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card">

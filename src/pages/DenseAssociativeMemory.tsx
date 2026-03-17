@@ -435,7 +435,7 @@ export default function DenseAssociativeMemoryPage() {
             Trainable Krotov-style bipartite associative memory over grayscale MNIST or Fashion-MNIST, with configurable hidden competition,
             iterative retrieval, learned prototype slots, and a live hidden-to-visible matrix.
           </p>
-          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
+          <p className="hero-task"><strong>Primary task:</strong> {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card"><span>Visible units</span><strong>{PATTERN_SIZE}</strong></div>
