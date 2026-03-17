@@ -6,6 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:datasets": "python scripts/build_dataset_archives.py",
+    "dam:smoke": "tsx scripts/dam-smoke.ts",
+    "rbm:smoke": "tsx scripts/rbm-smoke.ts",
+    "wasm:build": "npm run wasm:build:web && npm run wasm:build:node",
+    "wasm:build:web": "env PATH=/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin /usr/local/cargo/bin/wasm-pack build ./wasm-core --target web --out-dir pkg",
+    "wasm:build:node": "env PATH=/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin /usr/local/cargo/bin/wasm-pack build ./wasm-core --target nodejs --out-dir pkg-node",
+    "wasm:test": "/usr/local/cargo/bin/cargo test --manifest-path wasm-core/Cargo.toml",
+    "wasm:hopfield:smoke": "tsx scripts/wasm/hopfield-wasm-smoke.ts",
+    "wasm:dense-hopfield:smoke": "tsx scripts/wasm/dense-hopfield-wasm-smoke.ts",
+    "wasm:rbm:smoke": "tsx scripts/wasm/rbm-wasm-smoke.ts",
+    "wasm:dam:smoke": "tsx scripts/wasm/dam-wasm-smoke.ts",
+    "wasm:regression": "tsx scripts/wasm/wasm-regression.ts",
+    "verify:all": "npm run wasm:test && npm run wasm:build && npm run wasm:regression && npm run wasm:hopfield:smoke && npm run wasm:dense-hopfield:smoke && npm run wasm:rbm:smoke && npm run wasm:dam:smoke && npm run dam:smoke -- --dataset mnist --epochs 3 --hidden-units 64 --sharpness 6 && npm run rbm:smoke -- --dataset mnist --epochs 3 --hidden-units 64 --visible-model bernoulli && npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -32,6 +45,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "tsx": "^4.20.6",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1"

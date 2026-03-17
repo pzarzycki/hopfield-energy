@@ -42,6 +42,7 @@ export type WorkerRequest =
 
 export interface WorkerReadyMessage extends HopfieldInitResult {
   type: "ready";
+  backend: "wasm-core";
   snapshot: HopfieldSnapshot;
 }
 

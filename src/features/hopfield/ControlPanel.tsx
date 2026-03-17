@@ -5,6 +5,8 @@ interface ControlPanelProps {
   onCorruptionLevelChange: (value: number) => void;
   obfuscationLevel: number;
   onObfuscationLevelChange: (value: number) => void;
+  corruptionValueLabel?: string;
+  obfuscationValueLabel?: string;
 }
 
 export function ControlPanel({
@@ -14,6 +16,8 @@ export function ControlPanel({
   onCorruptionLevelChange,
   obfuscationLevel,
   onObfuscationLevelChange,
+  corruptionValueLabel = "flip values",
+  obfuscationValueLabel = "set to zero",
 }: ControlPanelProps) {
   return (
     <section className="panel control-panel">
@@ -31,7 +35,7 @@ export function ControlPanel({
           value={corruptionLevel}
           onChange={(event) => onCorruptionLevelChange(Number(event.target.value))}
         />
-        <strong className="range-value">{corruptionLevel}% flip bits</strong>
+        <strong className="range-value">{corruptionLevel}% {corruptionValueLabel}</strong>
       </div>
 
       <div className="field">
@@ -43,7 +47,7 @@ export function ControlPanel({
           value={obfuscationLevel}
           onChange={(event) => onObfuscationLevelChange(Number(event.target.value))}
         />
-        <strong className="range-value">{obfuscationLevel}% set to zero</strong>
+        <strong className="range-value">{obfuscationLevel}% {obfuscationValueLabel}</strong>
       </div>
 
       <div className="field">

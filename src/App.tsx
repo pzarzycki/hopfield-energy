@@ -1,16 +1,12 @@
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 
 import "./App.css";
+import DenseAssociativeMemoryPage from "./pages/DenseAssociativeMemory";
 import DenseHopfieldNetworkPage from "./pages/DenseHopfieldNetwork";
 import HopfieldNetworkPage from "./pages/HopfieldNetwork";
 import { PlaceholderNetworkPage } from "./pages/PlaceholderNetwork";
-
-const NETWORK_ROUTES = [
-  { path: "/networks/hopfield-network", label: "Hopfield Network" },
-  { path: "/networks/dense-hopfield-network", label: "Dense Hopfield Network" },
-  { path: "/networks/boltzmann-machine", label: "Boltzmann Machine" },
-  { path: "/networks/restricted-boltzmann-machine", label: "Restricted Boltzmann Machine" },
-] as const;
+import RestrictedBoltzmannMachinePage from "./pages/RestrictedBoltzmannMachine";
+import { MODEL_CATALOG, formatPrimaryTasks } from "./core/modelCatalog";
 
 function App() {
   return (
@@ -18,11 +14,12 @@ function App() {
       <header className="network-nav">
         <div className="network-nav__eyebrow">Network Type</div>
         <nav className="network-nav__list" aria-label="Network type selection">
-          {NETWORK_ROUTES.map((route) => (
+          {MODEL_CATALOG.map((route) => (
             <NavLink
               key={route.path}
               to={route.path}
               className={({ isActive }) => `network-nav__link${isActive ? " is-active" : ""}`}
+              title={`Primary task: ${formatPrimaryTasks(route.primaryTasks)}`}
             >
               {route.label}
             </NavLink>
@@ -34,6 +31,7 @@ function App() {
         <Route path="/" element={<Navigate to="/networks/hopfield-network" replace />} />
         <Route path="/networks/hopfield-network" element={<HopfieldNetworkPage />} />
         <Route path="/networks/dense-hopfield-network" element={<DenseHopfieldNetworkPage />} />
+        <Route path="/networks/dense-associative-memory" element={<DenseAssociativeMemoryPage />} />
         <Route
           path="/networks/boltzmann-machine"
           element={
@@ -46,13 +44,7 @@ function App() {
         />
         <Route
           path="/networks/restricted-boltzmann-machine"
-          element={
-            <PlaceholderNetworkPage
-              title="Restricted Boltzmann Machine"
-              urlPath="/networks/restricted-boltzmann-machine"
-              description="Placeholder page. Restricted Boltzmann Machine is not implemented yet."
-            />
-          }
+          element={<RestrictedBoltzmannMachinePage />}
         />
       </Routes>
     </div>

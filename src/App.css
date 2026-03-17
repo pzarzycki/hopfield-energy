@@ -3,14 +3,10 @@
 }
 
 .network-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
   display: grid;
   gap: 8px;
   padding: 10px 18px 8px;
-  backdrop-filter: blur(16px);
-  background: linear-gradient(180deg, rgba(247, 249, 253, 0.96), rgba(247, 249, 253, 0.74));
+  background: linear-gradient(180deg, rgba(247, 249, 253, 0.96), rgba(247, 249, 253, 0.9));
   border-bottom: 1px solid rgba(37, 55, 102, 0.08);
 }
 

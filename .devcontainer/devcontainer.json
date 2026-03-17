@@ -1,0 +1,49 @@
+{
+  "name": "hopfield-energy",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [5173, 4173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "4173": {
+      "label": "Vite Preview Server",
+      "onAutoForward": "notify"
+    }
+  },
+  "mounts": [
+    "source=${localEnv:USERPROFILE}\\.gitconfig,target=/home/node/.gitconfig,type=bind,readonly",
+    "source=${localEnv:USERPROFILE}\\.codex,target=/home/node/.codex,type=bind",
+    "source=${localEnv:USERPROFILE}\\.agents,target=/home/node/.agents,type=bind",
+    "source=${localWorkspaceFolderBasename}-node_modules,target=/workspaces/${localWorkspaceFolderBasename}/node_modules,type=volume",
+    "source=${localWorkspaceFolderBasename}-wasm-target,target=/workspaces/${localWorkspaceFolderBasename}/wasm-core/target,type=volume"
+  ],
+  "containerEnv": {
+    "CODEX_HOME": "/home/node/.codex",
+    "PROJECT_RUNTIME": "devcontainer",
+    "CARGO_HOME": "/usr/local/cargo",
+    "RUSTUP_HOME": "/usr/local/rustup",
+    "PATH": "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-vscode-remote.remote-containers",
+        "rust-lang.rust-analyzer",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}

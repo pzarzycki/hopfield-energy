@@ -12,7 +12,6 @@ export function PatternGallery({ patternSet, matchedIndex }: PatternGalleryProps
     <section className="panel">
       <div className="panel-header">
         <h3>Stored memories</h3>
-        <p>{patternSet.description}</p>
       </div>
       <div className="gallery-grid">
         {patternSet.patterns.map((pattern, index) => (

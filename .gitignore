@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+wasm-core/target
+wasm-core/pkg
 
 # Editor directories and files
 .vscode/*

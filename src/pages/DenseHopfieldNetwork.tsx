@@ -2,17 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleHelp, Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
 import { BlockMath, InlineMath } from "react-katex";
 
-import { buildDenseMemorySet, createDenseSnapshot, evaluateDenseState, stepDenseHopfield, type DenseMemorySet, type DenseSnapshot } from "../core/denseHopfield";
+import { createDenseSnapshot, type DenseSnapshot } from "../core/denseHopfield";
+import type { DenseHopfieldMemoryView, DenseHopfieldWorkerRequest, DenseHopfieldWorkerResponse } from "../core/denseHopfieldWorkerProtocol";
+import { formatPrimaryTasks, getModelCatalogEntry } from "../core/modelCatalog";
 import { PATTERN_SIDE, PATTERN_SIZE } from "../core/patternSets";
-import { getDatasetSamples, getFashionLabel } from "../utils/mnist-data";
-import { ControlPanel } from "../features/hopfield/ControlPanel";
+import { loadDatasetArchive, summarizeDatasetArchive, type DatasetName } from "../data/datasetArchives";
 import { EnergyPlot } from "../features/hopfield/EnergyPlot";
 import { GrayscaleHeatmap, WeightHeatmap } from "../features/hopfield/HeatmapCanvas";
 import { GrayscaleCanvas } from "../features/denseHopfield/GrayscaleCanvas";
 import { MemoryGallery } from "../features/denseHopfield/MemoryGallery";
 import { AttentionPanel } from "../features/denseHopfield/AttentionPanel";
-
-type DatasetName = "mnist" | "fashion-mnist";
+import { DatasetDialog } from "../features/common/DatasetDialog";
 
 function renderTextWithMath(text: string) {
   const segments = text.split(/(\$[^$]+\$)/g).filter(Boolean);
@@ -68,19 +68,6 @@ function applyPatternNoise(pattern: Float32Array, corruptionPercent: number, obf
   return next;
 }
 
-async function loadMemorySet(datasetName: DatasetName): Promise<DenseMemorySet> {
-  const samples = getDatasetSamples(datasetName);
-  const labels =
-    datasetName === "mnist" ? samples.map((sample) => String(sample.label)) : samples.map((sample) => getFashionLabel(sample.label));
-  const patterns = samples.map((sample) => Float32Array.from(sample.pattern, (value) => value / 255));
-  const memorySet = buildDenseMemorySet(labels, patterns);
-  memorySet.description =
-    datasetName === "mnist"
-      ? "Real grayscale MNIST exemplars loaded directly from the bundled dataset source."
-      : "Real grayscale Fashion-MNIST exemplars loaded directly from the bundled dataset source.";
-  return memorySet;
-}
-
 function HelpDialog({ onClose }: { onClose: () => void }) {
   const formula = String.raw`x' = X^{T}\,\mathrm{softmax}\!\left(\beta Xx\right), \qquad
 E(x)=\frac{1}{2}\lVert x \rVert^2 - \frac{1}{\beta}\log\sum_i \exp(\beta x_i^{T}x)`;
@@ -133,8 +120,9 @@ E(x)=\frac{1}{2}\lVert x \rVert^2 - \frac{1}{\beta}\log\sum_i \exp(\beta x_i^{T}
 }
 
 export default function DenseHopfieldNetworkPage() {
+  const modelEntry = getModelCatalogEntry("dense-hopfield");
   const [datasetName, setDatasetName] = useState<DatasetName>("mnist");
-  const [memorySet, setMemorySet] = useState<DenseMemorySet | null>(null);
+  const [memorySet, setMemorySet] = useState<DenseHopfieldMemoryView | null>(null);
   const [queryPattern, setQueryPattern] = useState<Float32Array>(() => createBlankPattern());
   const [snapshot, setSnapshot] = useState<DenseSnapshot>(() => createDenseSnapshot(createBlankPattern()));
   const [energyHistory, setEnergyHistory] = useState<number[]>([]);
@@ -147,12 +135,55 @@ export default function DenseHopfieldNetworkPage() {
   const [isReady, setIsReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showDatasetHelp, setShowDatasetHelp] = useState(false);
+  const [datasetFacts, setDatasetFacts] = useState<string[]>([]);
 
   const hasAppliedQueryRef = useRef(false);
-  const playbackStepCountRef = useRef(0);
+  const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const worker = new Worker(new URL("../workers/denseHopfield.worker.ts", import.meta.url), { type: "module" });
+    workerRef.current = worker;
+
+    const handleMessage = (event: MessageEvent<DenseHopfieldWorkerResponse>) => {
+      const message = event.data;
+
+      if (message.type === "initialized") {
+        setMemorySet(message.memorySet);
+        setSnapshot(message.snapshot);
+        setEnergyHistory([message.snapshot.energy]);
+        setIsReady(true);
+        setIsPlaying(false);
+        setErrorMessage(null);
+        return;
+      }
+
+      if (message.type === "snapshot") {
+        setSnapshot(message.snapshot);
+        setEnergyHistory((previous) => {
+          if (message.snapshot.step === 0) {
+            return [message.snapshot.energy];
+          }
+          return [...previous, message.snapshot.energy];
+        });
+        if (message.snapshot.converged) {
+          setIsPlaying(false);
+        }
+        return;
+      }
+
+      if (message.type === "paused") {
+        setIsPlaying(false);
+        return;
+      }
+
+      if (message.type === "error") {
+        setErrorMessage(message.message);
+        setIsPlaying(false);
+      }
+    };
+
+    worker.addEventListener("message", handleMessage);
     setIsReady(false);
     setIsPlaying(false);
     setErrorMessage(null);
@@ -161,21 +192,36 @@ export default function DenseHopfieldNetworkPage() {
     setSnapshot(createDenseSnapshot(createBlankPattern()));
     setEnergyHistory([]);
     hasAppliedQueryRef.current = false;
-    playbackStepCountRef.current = 0;
+    worker.postMessage({ type: "initialize", datasetName, beta } satisfies DenseHopfieldWorkerRequest);
 
-    void loadMemorySet(datasetName)
-      .then((nextMemorySet) => {
+    return () => {
+      worker.removeEventListener("message", handleMessage);
+      worker.terminate();
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+      }
+    };
+  }, [datasetName]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadDatasetArchive(datasetName)
+      .then((archive) => {
         if (cancelled) {
           return;
         }
-        setMemorySet(nextMemorySet);
-        setIsReady(true);
+        const stats = summarizeDatasetArchive(archive);
+        const perClassLabel =
+          stats.minSamplesPerClass === stats.maxSamplesPerClass
+            ? `${stats.minSamplesPerClass} per class`
+            : `${stats.minSamplesPerClass}-${stats.maxSamplesPerClass} per class`;
+        setDatasetFacts([`${stats.sampleCount} samples`, `${stats.classCount} classes`, perClassLabel]);
       })
-      .catch((error: unknown) => {
-        if (cancelled) {
-          return;
+      .catch(() => {
+        if (!cancelled) {
+          setDatasetFacts([]);
         }
-        setErrorMessage(error instanceof Error ? error.message : "Failed to load dataset archive.");
       });
 
     return () => {
@@ -184,108 +230,85 @@ export default function DenseHopfieldNetworkPage() {
   }, [datasetName]);
 
   useEffect(() => {
-    setIsPlaying(false);
-    hasAppliedQueryRef.current = false;
-    playbackStepCountRef.current = 0;
-    setSnapshot(createDenseSnapshot(createBlankPattern()));
-    setEnergyHistory([]);
-  }, [beta]);
-
-  useEffect(() => {
-    if (!isPlaying || !memorySet) {
+    if (!isReady) {
       return;
     }
-
-    const interval = window.setInterval(() => {
-      setSnapshot((current) => {
-        const base = hasAppliedQueryRef.current ? current : evaluateDenseState(queryPattern, memorySet, beta, 0);
-        hasAppliedQueryRef.current = true;
-
-        if (playbackStepCountRef.current >= maxPlaybackSteps) {
-          window.clearInterval(interval);
-          setIsPlaying(false);
-          return base;
-        }
-
-        const next = stepDenseHopfield(base.state, memorySet, beta, base.step, 1e-4);
-        playbackStepCountRef.current += 1;
-        setEnergyHistory((previous) => (previous.length === 0 ? [base.energy, next.energy] : [...previous, next.energy]));
-        if (next.converged || playbackStepCountRef.current >= maxPlaybackSteps) {
-          window.clearInterval(interval);
-          setIsPlaying(false);
-        }
-        return next;
-      });
-    }, Math.max(40, Math.round(1000 / speed)));
-
-    return () => window.clearInterval(interval);
-  }, [beta, isPlaying, maxPlaybackSteps, memorySet, queryPattern, speed]);
+    setIsPlaying(false);
+    hasAppliedQueryRef.current = false;
+    workerRef.current?.postMessage({ type: "setBeta", beta } satisfies DenseHopfieldWorkerRequest);
+  }, [beta]);
 
   const affinityMaxAbs = useMemo(() => memorySet?.maxSimilarityAbs ?? 1, [memorySet]);
 
-  function primeQueryState(nextState: Float32Array = queryPattern): DenseSnapshot | null {
-    if (!memorySet) {
-      return null;
+  function setQueryOnWorker(nextState: Float32Array = queryPattern): Float32Array {
+    const worker = workerRef.current;
+    const normalized = nextState.slice();
+    setQueryPattern(normalized);
+    if (worker) {
+      const outgoing = normalized.slice();
+      worker.postMessage({ type: "setQuery", pattern: outgoing } satisfies DenseHopfieldWorkerRequest, [outgoing.buffer]);
     }
-    const initial = evaluateDenseState(nextState, memorySet, beta, 0);
-    setSnapshot(initial);
-    setEnergyHistory([initial.energy]);
     hasAppliedQueryRef.current = true;
-    playbackStepCountRef.current = 0;
-    return initial;
+    return normalized;
   }
 
   function applyQuery(): void {
-    const initial = primeQueryState();
-    if (!initial) {
+    const worker = workerRef.current;
+    if (!worker || !isReady) {
       return;
     }
+    setQueryOnWorker();
     setIsPlaying(true);
+    worker.postMessage({
+      type: "play",
+      intervalMs: Math.max(40, Math.round(1000 / speed)),
+      maxSteps: Math.max(1, maxPlaybackSteps),
+    } satisfies DenseHopfieldWorkerRequest);
   }
 
   function handlePlay(): void {
-    if (!memorySet) {
+    const worker = workerRef.current;
+    if (!worker || !isReady) {
       return;
     }
     if (!hasAppliedQueryRef.current) {
-      primeQueryState();
+      setQueryOnWorker();
     }
     setIsPlaying(true);
+    worker.postMessage({
+      type: "play",
+      intervalMs: Math.max(40, Math.round(1000 / speed)),
+      maxSteps: Math.max(1, maxPlaybackSteps),
+    } satisfies DenseHopfieldWorkerRequest);
   }
 
   function handlePause(): void {
-    setIsPlaying(false);
+    workerRef.current?.postMessage({ type: "pause" } satisfies DenseHopfieldWorkerRequest);
   }
 
   function handleStep(): void {
-    if (!memorySet) {
+    const worker = workerRef.current;
+    if (!worker || !isReady) {
       return;
     }
-
     setIsPlaying(false);
-    setSnapshot((current) => {
-      const base = hasAppliedQueryRef.current ? current : primeQueryState() ?? current;
-      const next = stepDenseHopfield(base.state, memorySet, beta, base.step, 1e-4);
-      hasAppliedQueryRef.current = true;
-      playbackStepCountRef.current = Math.min(maxPlaybackSteps, playbackStepCountRef.current + 1);
-      setEnergyHistory((previous) => (previous.length === 0 ? [base.energy, next.energy] : [...previous, next.energy]));
-      return next;
-    });
+    if (!hasAppliedQueryRef.current) {
+      setQueryOnWorker();
+    }
+    worker.postMessage({ type: "step" } satisfies DenseHopfieldWorkerRequest);
   }
 
   function handleReset(): void {
     setIsPlaying(false);
-    primeQueryState();
+    workerRef.current?.postMessage({ type: "reset" } satisfies DenseHopfieldWorkerRequest);
   }
 
   function handleClear(): void {
     const blank = createBlankPattern();
     setIsPlaying(false);
-    setQueryPattern(blank);
-    setSnapshot(createDenseSnapshot(blank.slice()));
-    setEnergyHistory([]);
     hasAppliedQueryRef.current = false;
-    playbackStepCountRef.current = 0;
+    setQueryOnWorker(blank);
+    hasAppliedQueryRef.current = false;
   }
 
   function handleLoadPattern(index: number): void {
@@ -295,19 +318,13 @@ export default function DenseHopfieldNetworkPage() {
     const next = applyPatternNoise(memorySet.patterns[index], corruptionLevel, obfuscationLevel);
     setIsPlaying(false);
     setQueryPattern(next);
-    setSnapshot(createDenseSnapshot(next.slice()));
-    setEnergyHistory([]);
     hasAppliedQueryRef.current = false;
-    playbackStepCountRef.current = 0;
   }
 
   function handlePatternChange(nextPattern: Float32Array): void {
     setIsPlaying(false);
     setQueryPattern(nextPattern);
-    setSnapshot(createDenseSnapshot(nextPattern.slice()));
-    setEnergyHistory([]);
     hasAppliedQueryRef.current = false;
-    playbackStepCountRef.current = 0;
   }
 
   const labels = memorySet?.labels ?? [];
@@ -317,12 +334,13 @@ export default function DenseHopfieldNetworkPage() {
     <div className="page-shell">
       <header className="hero">
         <div>
-          <p className="eyebrow">Browser-only implementation</p>
+          <p className="eyebrow">Wasm-backed worker runtime</p>
           <h1>Dense Hopfield Network</h1>
           <p className="hero-copy">
             Continuous-state retrieval over bundled MNIST and Fashion-MNIST memories, with editable 28x28 queries,
             softmax attention dynamics, live reconstruction, and an in-browser memory affinity map.
           </p>
+          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card">
@@ -346,10 +364,18 @@ export default function DenseHopfieldNetworkPage() {
         <div className="control-strip-group">
           <div className="control-strip-header">
             <span className="control-strip-title">Dataset</span>
-            <span className="control-strip-spacer" aria-hidden="true" />
+            <button
+              type="button"
+              className="help-btn"
+              aria-expanded={showDatasetHelp}
+              onClick={() => setShowDatasetHelp((current) => !current)}
+              title="Dataset help"
+            >
+              <CircleHelp size={15} />
+            </button>
           </div>
           <label className="field compact-field">
-            <span>Archive</span>
+            <span>Dataset</span>
             <select value={datasetName} onChange={(event) => setDatasetName(event.target.value as DatasetName)}>
               <option value="mnist">MNIST</option>
               <option value="fashion-mnist">Fashion-MNIST</option>
@@ -435,32 +461,46 @@ export default function DenseHopfieldNetworkPage() {
         </div>
       </section>
 
-      <div className="dashboard-grid">
-        <div className="left-column">
-          <ControlPanel
-            labels={labels}
-            onLoadPattern={handleLoadPattern}
-            corruptionLevel={corruptionLevel}
-            onCorruptionLevelChange={setCorruptionLevel}
-            obfuscationLevel={obfuscationLevel}
-            onObfuscationLevelChange={setObfuscationLevel}
-          />
-          {memorySet ? <MemoryGallery labels={memorySet.labels} patterns={memorySet.patterns} matchedIndex={snapshot.matchedPatternIndex} /> : null}
-        </div>
-
+      <div className="dashboard-grid dashboard-grid--two-column">
         <div className="main-column">
           <section className="center-row">
             <section className="panel input-panel">
               <div className="panel-header">
-                <h3>Query editor</h3>
-                <p>Draw a 28x28 query directly. Left-drag paints ink; right-drag or modifier-drag erases it.</p>
+                <h3>Query</h3>
+                <p>Pick a stored memory, degrade it if needed, then edit the query directly before running retrieval.</p>
               </div>
-              <div className="input-grid">
-                <GrayscaleCanvas pattern={queryPattern} onChange={handlePatternChange} />
-                <div className="query-actions">
-                  <button type="button" onClick={handleClear}>
-                    clear
-                  </button>
+              <div className="query-workbench">
+                <div className="query-toolbar">
+                  <div className="field compact-field">
+                    <span>Examples</span>
+                    <div className="pattern-picker pattern-picker--compact">
+                      {labels.map((label, index) => (
+                        <button key={label} type="button" onClick={() => handleLoadPattern(index)} title={`Load ${label}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="query-toolbar--row">
+                    <label className="field compact-field">
+                      <span>Corruption</span>
+                      <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Invert intensity on a portion of the selected memory before loading it into the query editor" />
+                      <strong className="range-value">{corruptionLevel}%</strong>
+                    </label>
+                    <label className="field compact-field">
+                      <span>Obfuscation</span>
+                      <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the selected memory to zero before retrieval" />
+                      <strong className="range-value">{obfuscationLevel}%</strong>
+                    </label>
+                  </div>
+                </div>
+                <div className="input-grid">
+                  <GrayscaleCanvas pattern={queryPattern} onChange={handlePatternChange} />
+                  <div className="query-actions">
+                    <button type="button" onClick={handleClear} title="Clear the query editor">
+                      clear
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -471,7 +511,6 @@ export default function DenseHopfieldNetworkPage() {
                 data={memorySet.similarityMatrix}
                 side={memorySet.patterns.length}
                 maxAbs={affinityMaxAbs}
-                scale={28}
                 caption="Pairwise similarity among stored memories. This is not a neuron-to-neuron connection matrix."
                 xLabel="memory j"
                 yLabel="memory i"
@@ -532,6 +571,17 @@ export default function DenseHopfieldNetworkPage() {
           </section>
         </div>
       </div>
+
+      {showDatasetHelp && memorySet ? (
+        <DatasetDialog
+          title="Dataset"
+          summary={memorySet.description}
+          facts={datasetFacts}
+          onClose={() => setShowDatasetHelp(false)}
+        >
+          <MemoryGallery labels={memorySet.labels} patterns={memorySet.patterns} matchedIndex={snapshot.matchedPatternIndex} />
+        </DatasetDialog>
+      ) : null}
 
       {showHelp ? <HelpDialog onClose={() => setShowHelp(false)} /> : null}
     </div>

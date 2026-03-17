@@ -1,5 +1,3 @@
-import { getDatasetSamples, getFashionLabel, grayscaleToBipolar } from "../utils/mnist-data";
-
 export const PATTERN_SIDE = 28;
 export const PATTERN_SIZE = PATTERN_SIDE * PATTERN_SIDE;
 
@@ -9,6 +7,11 @@ export interface PatternSetDefinition {
   description: string;
   labels: string[];
   patterns: Int8Array[];
+}
+
+export interface PatternSetOption {
+  id: string;
+  name: string;
 }
 
 function createPattern(): Int8Array {
@@ -112,48 +115,17 @@ function fillByPredicate(pattern: Int8Array, predicate: (x: number, y: number) =
   }
 }
 
-
 const DIGIT_BITMAPS: Array<{ label: string; bitmap: string[] }> = [
-  {
-    label: "0",
-    bitmap: ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
-  },
-  {
-    label: "1",
-    bitmap: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
-  },
-  {
-    label: "2",
-    bitmap: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
-  },
-  {
-    label: "3",
-    bitmap: ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
-  },
-  {
-    label: "4",
-    bitmap: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
-  },
-  {
-    label: "5",
-    bitmap: ["11111", "10000", "10000", "11110", "00001", "00001", "11110"],
-  },
-  {
-    label: "6",
-    bitmap: ["01110", "10000", "10000", "11110", "10001", "10001", "01110"],
-  },
-  {
-    label: "7",
-    bitmap: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
-  },
-  {
-    label: "8",
-    bitmap: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
-  },
-  {
-    label: "9",
-    bitmap: ["01110", "10001", "10001", "01111", "00001", "00001", "01110"],
-  },
+  { label: "0", bitmap: ["01110", "10001", "10011", "10101", "11001", "10001", "01110"] },
+  { label: "1", bitmap: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"] },
+  { label: "2", bitmap: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"] },
+  { label: "3", bitmap: ["11110", "00001", "00001", "01110", "00001", "00001", "11110"] },
+  { label: "4", bitmap: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"] },
+  { label: "5", bitmap: ["11111", "10000", "10000", "11110", "00001", "00001", "11110"] },
+  { label: "6", bitmap: ["01110", "10000", "10000", "11110", "10001", "10001", "01110"] },
+  { label: "7", bitmap: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"] },
+  { label: "8", bitmap: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"] },
+  { label: "9", bitmap: ["01110", "10001", "10001", "01111", "00001", "00001", "01110"] },
 ];
 
 function normalizedCorrelation(a: Int8Array, b: Int8Array): number {
@@ -266,7 +238,7 @@ function buildOrthogonalHatchPatternSet(): PatternSetDefinition {
   const vertical = createPattern();
   fillByPredicate(vertical, (x) => x % 4 < 2);
 
-  const labels = ["diag \u2196", "diag \u2197", "horiz", "vert"];
+  const labels = ["diag \u2197", "diag \u2196", "horiz", "vert"];
   const patterns = [diagonalLeft, diagonalRight, horizontal, vertical];
   const maxCorrelation = Math.max(
     ...patterns.flatMap((pattern, patternIndex) =>
@@ -283,39 +255,28 @@ function buildOrthogonalHatchPatternSet(): PatternSetDefinition {
   };
 }
 
-function buildRealDatasetPatternSet(dataset: "mnist" | "fashion-mnist"): PatternSetDefinition {
-  const samples = getDatasetSamples(dataset);
-  const labels =
-    dataset === "mnist" ? samples.map((sample) => String(sample.label)) : samples.map((sample) => getFashionLabel(sample.label));
-  const patterns = samples.map((sample) => Int8Array.from(grayscaleToBipolar(sample.pattern, 128)));
-  const maxCorrelation = Math.max(
-    ...patterns.flatMap((pattern, patternIndex) =>
-      patterns.slice(patternIndex + 1).map((otherPattern) => Math.abs(normalizedCorrelation(pattern, otherPattern))),
-    ),
-  );
-
-  return {
-    id: dataset,
-    name: dataset === "mnist" ? "MNIST" : "Fashion-MNIST",
-    description:
-      dataset === "mnist"
-        ? `Real grayscale MNIST exemplars, binarized at threshold 128 for classical Hopfield storage. Max pairwise correlation ${maxCorrelation.toFixed(2)}.`
-        : `Real grayscale Fashion-MNIST exemplars, binarized at threshold 128 for classical Hopfield storage. Max pairwise correlation ${maxCorrelation.toFixed(2)}.`,
-    labels,
-    patterns,
-  };
-}
-
-export const PATTERN_SETS: PatternSetDefinition[] = [
-  buildRealDatasetPatternSet("mnist"),
-  buildRealDatasetPatternSet("fashion-mnist"),
+const SYNTHETIC_PATTERN_SETS: PatternSetDefinition[] = [
   buildOrthogonalHatchPatternSet(),
   buildDigitPatternSet(),
   buildShapePatternSet(),
 ];
 
-export function getPatternSetById(id: string): PatternSetDefinition {
-  return PATTERN_SETS.find((patternSet) => patternSet.id === id) ?? PATTERN_SETS[0];
+const SYNTHETIC_PATTERN_SET_MAP = new Map(SYNTHETIC_PATTERN_SETS.map((entry) => [entry.id, entry]));
+
+export const PATTERN_SET_OPTIONS: PatternSetOption[] = [
+  ...SYNTHETIC_PATTERN_SETS.map((entry) => ({ id: entry.id, name: entry.name })),
+];
+
+export async function loadPatternSetById(id: string): Promise<PatternSetDefinition> {
+  const patternSet = SYNTHETIC_PATTERN_SET_MAP.get(id);
+  if (!patternSet) {
+    throw new Error(`Unknown pattern set: ${id}`);
+  }
+  return patternSet;
+}
+
+export function getDefaultPatternSetId(): string {
+  return PATTERN_SET_OPTIONS[0].id;
 }
 
 export function clonePattern(pattern: Int8Array): Int8Array {

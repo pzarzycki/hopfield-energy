@@ -2,9 +2,25 @@ import { useEffect, useRef } from "react";
 
 interface EnergyPlotProps {
   values: number[];
+  title?: string;
+  caption?: string;
+  xLabel?: string;
+  yLabel?: string;
+  width?: number;
+  height?: number;
+  className?: string;
 }
 
-export function EnergyPlot({ values }: EnergyPlotProps) {
+export function EnergyPlot({
+  values,
+  title = "Energy",
+  caption = "Compact convergence trace.",
+  xLabel = "step",
+  yLabel = "energy",
+  width = 280,
+  height = 120,
+  className = "energy-plot energy-plot--compact",
+}: EnergyPlotProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -18,19 +34,19 @@ export function EnergyPlot({ values }: EnergyPlotProps) {
       return;
     }
 
-    const width = canvas.width;
-    const height = canvas.height;
-    context.clearRect(0, 0, width, height);
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
     context.fillStyle = "#f7f9fe";
-    context.fillRect(0, 0, width, height);
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
 
     context.strokeStyle = "rgba(62, 90, 148, 0.15)";
     context.lineWidth = 1;
     for (let row = 0; row < 4; row += 1) {
-      const y = 16 + ((height - 32) * row) / 3;
+      const y = 16 + ((canvasHeight - 32) * row) / 3;
       context.beginPath();
       context.moveTo(0, y);
-      context.lineTo(width, y);
+      context.lineTo(canvasWidth, y);
       context.stroke();
     }
 
@@ -47,8 +63,8 @@ export function EnergyPlot({ values }: EnergyPlotProps) {
     context.beginPath();
 
     values.forEach((value, index) => {
-      const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
-      const y = height - 16 - ((value - min) / range) * (height - 32);
+      const x = values.length === 1 ? canvasWidth / 2 : (index / (values.length - 1)) * canvasWidth;
+      const y = canvasHeight - 16 - ((value - min) / range) * (canvasHeight - 32);
       if (index === 0) {
         context.moveTo(x, y);
       } else {
@@ -59,8 +75,8 @@ export function EnergyPlot({ values }: EnergyPlotProps) {
     context.stroke();
 
     const last = values[values.length - 1];
-    const lastX = values.length === 1 ? width / 2 : width;
-    const lastY = height - 16 - ((last - min) / range) * (height - 32);
+    const lastX = values.length === 1 ? canvasWidth / 2 : canvasWidth;
+    const lastY = canvasHeight - 16 - ((last - min) / range) * (canvasHeight - 32);
     context.fillStyle = "#d63a44";
     context.beginPath();
     context.arc(lastX, lastY, 4, 0, Math.PI * 2);
@@ -70,17 +86,17 @@ export function EnergyPlot({ values }: EnergyPlotProps) {
   return (
     <section className="panel">
       <div className="panel-header">
-        <h3>Energy</h3>
-        <p>Compact convergence trace.</p>
+        <h3>{title}</h3>
+        <p>{caption}</p>
       </div>
       <div className="axis-frame">
         <div className="axis-frame__body">
-          <span className="axis-frame__y">energy</span>
+          <span className="axis-frame__y">{yLabel}</span>
           <div className="axis-frame__content">
-            <canvas ref={canvasRef} width={280} height={120} className="energy-plot energy-plot--compact" />
+            <canvas ref={canvasRef} width={width} height={height} className={className} />
           </div>
         </div>
-        <span className="axis-frame__x">step</span>
+        <span className="axis-frame__x">{xLabel}</span>
       </div>
     </section>
   );

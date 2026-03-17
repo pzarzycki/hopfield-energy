@@ -8,6 +8,7 @@ interface GrayscaleCanvasProps {
   onChange: (pattern: Float32Array) => void;
   scale?: number;
   readOnly?: boolean;
+  paintValue?: number;
 }
 
 const DEFAULT_SCALE = 12;
@@ -17,7 +18,13 @@ function copyPattern(pattern: Float32Array): Float32Array {
   return pattern.slice();
 }
 
-export function GrayscaleCanvas({ pattern, onChange, scale = DEFAULT_SCALE, readOnly = false }: GrayscaleCanvasProps) {
+export function GrayscaleCanvas({
+  pattern,
+  onChange,
+  scale = DEFAULT_SCALE,
+  readOnly = false,
+  paintValue = 1,
+}: GrayscaleCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const eraseRef = useRef(false);
@@ -64,7 +71,7 @@ export function GrayscaleCanvas({ pattern, onChange, scale = DEFAULT_SCALE, read
 
     draftPatternRef.current = pattern;
     renderPattern(pattern);
-  }, [pattern, scale]);
+  }, [paintValue, pattern, scale]);
 
   function getCell(event: React.PointerEvent<HTMLCanvasElement>): { x: number; y: number } | null {
     const canvas = canvasRef.current;
@@ -116,7 +123,7 @@ export function GrayscaleCanvas({ pattern, onChange, scale = DEFAULT_SCALE, read
     const next = draftPatternRef.current;
     const start = from ?? to;
     const steps = Math.max(Math.abs(to.x - start.x), Math.abs(to.y - start.y), 1);
-    const value = eraseRef.current ? 0 : 1;
+    const value = eraseRef.current ? 0 : clamp(paintValue, 0, 1);
 
     for (let step = 0; step <= steps; step += 1) {
       const t = step / steps;

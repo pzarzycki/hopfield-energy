@@ -15,19 +15,21 @@ import {
 import {
   clonePattern,
   createBlankPattern,
-  getPatternSetById,
-  PATTERN_SETS,
+  getDefaultPatternSetId,
+  loadPatternSetById,
+  PATTERN_SET_OPTIONS,
   PATTERN_SIDE,
   type PatternSetDefinition,
 } from "../core/patternSets";
+import { formatPrimaryTasks, getModelCatalogEntry } from "../core/modelCatalog";
 import type { WorkerRequest, WorkerResponse } from "../core/workerProtocol";
-import { ControlPanel } from "../features/hopfield/ControlPanel";
 import { EnergyPlot } from "../features/hopfield/EnergyPlot";
 import { ValueGridHeatmap, WeightHeatmap } from "../features/hopfield/HeatmapCanvas";
 import { PatternCanvas } from "../features/hopfield/PatternCanvas";
 import { PatternGallery } from "../features/hopfield/PatternGallery";
+import { DatasetDialog } from "../features/common/DatasetDialog";
 
-type HelpPanelKey = "learning" | "convergence" | null;
+type HelpPanelKey = "dataset" | "learning" | "convergence" | null;
 interface HelpContent {
   title: string;
   summary: string;
@@ -396,8 +398,16 @@ function HelpDialog({
 }
 
 export default function HopfieldNetworkPage() {
-  const [patternSetId, setPatternSetId] = useState(PATTERN_SETS[0].id);
-  const [patternSet, setPatternSet] = useState<PatternSetDefinition>(() => getPatternSetById(PATTERN_SETS[0].id));
+  const modelEntry = getModelCatalogEntry("hopfield");
+  const defaultPatternSetId = getDefaultPatternSetId();
+  const [patternSetId, setPatternSetId] = useState(defaultPatternSetId);
+  const [patternSet, setPatternSet] = useState<PatternSetDefinition>({
+    id: defaultPatternSetId,
+    name: PATTERN_SET_OPTIONS[0].name,
+    description: "Loading pattern set...",
+    labels: [],
+    patterns: [],
+  });
   const [learningConfig, setLearningConfig] = useState<LearningRuleConfig>(() => createDefaultLearningRuleConfig("hebbian"));
   const [convergenceConfig, setConvergenceConfig] = useState<ConvergenceRuleConfig>(() =>
     createDefaultConvergenceRuleConfig("async-random"),
@@ -413,6 +423,7 @@ export default function HopfieldNetworkPage() {
   const [obfuscationLevel, setObfuscationLevel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isPatternSetLoading, setIsPatternSetLoading] = useState(true);
   const [workerError, setWorkerError] = useState<string | null>(null);
   const [openHelpPanel, setOpenHelpPanel] = useState<HelpPanelKey>(null);
   const isFirstLearningRenderRef = useRef(true);
@@ -497,19 +508,43 @@ export default function HopfieldNetworkPage() {
       return;
     }
 
-    const nextPatternSet = getPatternSetById(patternSetId);
-    setPatternSet(nextPatternSet);
+    let cancelled = false;
     setQueryPattern(createBlankPattern());
     setEnergyHistory([]);
     setSnapshot(createSnapshot(createBlankPattern()));
     setIsReady(false);
+    setIsPatternSetLoading(true);
+    setWorkerError(null);
     hasAppliedQueryRef.current = false;
 
-    worker.postMessage({
-      type: "initialize",
-      patternSetId,
-      learningConfig,
-    } satisfies WorkerRequest);
+    void loadPatternSetById(patternSetId)
+      .then((nextPatternSet) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPatternSet(nextPatternSet);
+        worker.postMessage({
+          type: "initialize",
+          patternSetId,
+          learningConfig,
+        } satisfies WorkerRequest);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setWorkerError(error instanceof Error ? error.message : "Failed to load pattern set.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsPatternSetLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [patternSetId]);
 
   useEffect(() => {
@@ -526,6 +561,7 @@ export default function HopfieldNetworkPage() {
     setEnergyHistory([]);
     setSnapshot(createSnapshot(createBlankPattern()));
     setIsReady(false);
+    setWorkerError(null);
     hasAppliedQueryRef.current = false;
 
     worker.postMessage({
@@ -769,12 +805,13 @@ export default function HopfieldNetworkPage() {
     <div className="page-shell">
       <header className="hero">
         <div>
-          <p className="eyebrow">Browser-only implementation</p>
+          <p className="eyebrow">Wasm-backed worker runtime</p>
           <h1>Hopfield Network</h1>
           <p className="hero-copy">
             Typed-array Hopfield core, worker-driven convergence, editable 28x28 input, live neuron-state heatmap,
             and a full 784x784 connection matrix rendered in the client.
           </p>
+          <p className="hero-task">Primary task: {formatPrimaryTasks(modelEntry.primaryTasks)}</p>
         </div>
         <div className="hero-stats">
           <div className="stat-card">
@@ -797,20 +834,28 @@ export default function HopfieldNetworkPage() {
       <section className="panel architecture-bar">
         <div className="control-strip-group">
           <div className="control-strip-header">
-            <span className="control-strip-title">Pattern set</span>
-            <span className="control-strip-spacer" aria-hidden="true" />
+            <span className="control-strip-title">Dataset</span>
+            <button
+              type="button"
+              className="help-btn"
+              aria-expanded={openHelpPanel === "dataset"}
+              onClick={() => setOpenHelpPanel(openHelpPanel === "dataset" ? null : "dataset")}
+              title="Dataset help"
+            >
+              <CircleHelp size={15} />
+            </button>
           </div>
           <label className="field compact-field">
             <span>Dataset</span>
             <select value={patternSetId} onChange={(event) => setPatternSetId(event.target.value)}>
-              {PATTERN_SETS.map((entry) => (
+              {PATTERN_SET_OPTIONS.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.name}
                 </option>
               ))}
             </select>
           </label>
-          <p className="control-strip-note">Binary patterns: active = +1, inactive = -1.</p>
+          <p className="control-strip-note">{isPatternSetLoading ? "Loading selected pattern set..." : "Binary patterns: active = +1, inactive = -1."}</p>
         </div>
 
         <div className="control-strip-group">
@@ -869,7 +914,7 @@ export default function HopfieldNetworkPage() {
             <div className="convergence-strip-main">
               <div className="convergence-fields">{renderConvergenceFields()}</div>
               <div className="control-actions">
-                <button type="button" className="icon-btn primary" onClick={applyQuery} disabled={!isReady} title="Apply query">
+                  <button type="button" className="icon-btn primary" onClick={applyQuery} disabled={!isReady || isPatternSetLoading} title="Apply query">
                   <SkipForward size={14} />
                   <span>Apply</span>
                 </button>
@@ -879,16 +924,16 @@ export default function HopfieldNetworkPage() {
                     <span>Pause</span>
                   </button>
                 ) : (
-                  <button type="button" className="icon-btn" onClick={handlePlay} disabled={!isReady} title="Play">
+                  <button type="button" className="icon-btn" onClick={handlePlay} disabled={!isReady || isPatternSetLoading} title="Play">
                     <Play size={14} />
                     <span>Play</span>
                   </button>
                 )}
-                <button type="button" className="icon-btn" onClick={handleStep} disabled={!isReady || isPlaying} title="Step">
+                <button type="button" className="icon-btn" onClick={handleStep} disabled={!isReady || isPlaying || isPatternSetLoading} title="Step">
                   <SkipForward size={14} />
                   <span>Step</span>
                 </button>
-                <button type="button" className="icon-btn" onClick={handleReset} disabled={!isReady} title="Reset">
+                <button type="button" className="icon-btn" onClick={handleReset} disabled={!isReady || isPatternSetLoading} title="Reset">
                   <RotateCcw size={14} />
                   <span>Reset</span>
                 </button>
@@ -898,43 +943,59 @@ export default function HopfieldNetworkPage() {
         </div>
       </section>
 
-      <div className="dashboard-grid">
-        <div className="left-column">
-          <ControlPanel
-            labels={patternSet.labels}
-            onLoadPattern={handleLoadPattern}
-            corruptionLevel={corruptionLevel}
-            onCorruptionLevelChange={setCorruptionLevel}
-            obfuscationLevel={obfuscationLevel}
-            onObfuscationLevelChange={setObfuscationLevel}
-          />
-          <PatternGallery patternSet={patternSet} matchedIndex={snapshot.matchedPatternIndex} />
-        </div>
-
+      <div className="dashboard-grid dashboard-grid--two-column">
         <div className="main-column">
           <section className="center-row">
             <section className="panel input-panel">
               <div className="panel-header">
-                <h3>Query editor</h3>
-                <p>Draw directly on the 28x28 lattice, then apply the pattern and watch the selected convergence dynamics.</p>
+                <h3>Query</h3>
+                <p>Pick a stored pattern, degrade it if needed, then edit directly on the 28x28 lattice before running retrieval.</p>
               </div>
-              <div className="input-grid">
+              <div className="query-workbench">
+                <div className="query-toolbar">
+                  <div className="field compact-field">
+                    <span>Examples</span>
+                    <div className="pattern-picker pattern-picker--compact">
+                      {patternSet.labels.map((label, index) => (
+                        <button key={label} type="button" onClick={() => handleLoadPattern(index)} title={`Load ${label}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="query-toolbar--row">
+                    <label className="field compact-field">
+                      <span>Corruption</span>
+                      <input type="range" min="0" max="100" value={corruptionLevel} onChange={(event) => setCorruptionLevel(Number(event.target.value))} title="Randomly flip bipolar values before loading into the query editor" />
+                      <strong className="range-value">{corruptionLevel}%</strong>
+                    </label>
+                    <label className="field compact-field">
+                      <span>Obfuscation</span>
+                      <input type="range" min="0" max="100" value={obfuscationLevel} onChange={(event) => setObfuscationLevel(Number(event.target.value))} title="Set part of the loaded pattern to zero before retrieval" />
+                      <strong className="range-value">{obfuscationLevel}%</strong>
+                    </label>
+                  </div>
+                </div>
+                <div className="input-grid">
                 <PatternCanvas pattern={queryPattern} onChange={handlePatternChange} />
                 <div className="query-actions">
-                  <button type="button" onClick={handleClear}>
+                  <button type="button" onClick={handleClear} title="Clear the query editor">
                     clear
                   </button>
+                </div>
                 </div>
               </div>
             </section>
 
-            <WeightHeatmap
-              title="Connectome heatmap"
-              data={weights}
-              side={PATTERN_SIDE * PATTERN_SIDE}
-              maxAbs={maxWeightAbs}
-              caption={`${getLearningRuleLabel(learningConfig.rule)} weight matrix across all 784 neurons.`}
-            />
+            <div className="hopfield-connectome">
+              <WeightHeatmap
+                title="Connectome heatmap"
+                data={weights}
+                side={PATTERN_SIDE * PATTERN_SIDE}
+                maxAbs={maxWeightAbs}
+                caption={`${getLearningRuleLabel(learningConfig.rule)} weight matrix across all 784 neurons.`}
+              />
+            </div>
           </section>
         </div>
 
@@ -985,6 +1046,16 @@ export default function HopfieldNetworkPage() {
           </section>
         </div>
       </div>
+
+      {openHelpPanel === "dataset" ? (
+        <DatasetDialog
+          title="Dataset"
+          summary={patternSet.description}
+          onClose={() => setOpenHelpPanel(null)}
+        >
+          <PatternGallery patternSet={patternSet} matchedIndex={snapshot.matchedPatternIndex} />
+        </DatasetDialog>
+      ) : null}
 
       {openHelpPanel === "learning" ? (
         <HelpDialog

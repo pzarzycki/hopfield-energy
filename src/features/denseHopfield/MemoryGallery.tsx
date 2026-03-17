@@ -12,7 +12,6 @@ export function MemoryGallery({ labels, patterns, matchedIndex }: MemoryGalleryP
     <section className="panel">
       <div className="panel-header">
         <h3>Stored memories</h3>
-        <p>One exemplar per class loaded from the selected dataset archive.</p>
       </div>
       <div className="gallery-grid">
         {patterns.map((pattern, index) => (
