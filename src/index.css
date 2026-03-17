@@ -624,6 +624,40 @@ button {
   border-color: var(--blue);
 }
 
+.phase-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: -4px 0 10px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.phase-tabs__list {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.phase-tabs__list button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 0;
+  padding: 10px 14px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phase-tabs__list button.is-active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+  background: transparent;
+}
+
 .pattern-picker {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

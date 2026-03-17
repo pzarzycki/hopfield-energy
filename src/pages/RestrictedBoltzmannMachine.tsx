@@ -436,6 +436,7 @@ export default function RestrictedBoltzmannMachinePage() {
   const weightMeanAbsSeries = trainingHistory.map((entry) => entry.weightMeanAbs);
   const trainerEpoch = currentEpoch;
   const trainingProgress = epochs > 0 ? Math.min(100, Math.round((trainerEpoch / epochs) * 100)) : 0;
+  const [activePhase, setActivePhase] = useState<"training" | "inference">("training");
 
   function handleStartTraining(): void {
     if (!isTrainingConfigured || currentEpoch >= epochs) {
@@ -555,8 +556,32 @@ export default function RestrictedBoltzmannMachinePage() {
 
       </section>
 
+      <section className="phase-tabs" aria-label="Restricted Boltzmann Machine phase">
+        <div className="phase-tabs__list" role="tablist" aria-label="Restricted Boltzmann Machine phase">
+          <button
+            type="button"
+            className={activePhase === "training" ? "is-active" : ""}
+            onClick={() => setActivePhase("training")}
+            role="tab"
+            aria-selected={activePhase === "training"}
+          >
+            Training
+          </button>
+          <button
+            type="button"
+            className={activePhase === "inference" ? "is-active" : ""}
+            onClick={() => setActivePhase("inference")}
+            role="tab"
+            aria-selected={activePhase === "inference"}
+          >
+            Inference
+          </button>
+        </div>
+      </section>
+
       <div className="rbm-stage-grid">
         <div className="rbm-stage-main">
+          {activePhase === "training" ? (
           <section className="panel">
             <div className="panel-header">
               <h3>Training process</h3>
@@ -732,7 +757,9 @@ export default function RestrictedBoltzmannMachinePage() {
               />
             </div>
           </section>
+          ) : null}
 
+          {activePhase === "inference" ? (
           <section className="panel">
             <div className="panel-header">
               <h3>Query and Gibbs playback</h3>
@@ -784,7 +811,9 @@ export default function RestrictedBoltzmannMachinePage() {
               </div>
             </div>
           </section>
+          ) : null}
 
+          {activePhase === "inference" ? (
           <section className="rbm-canvas-row">
             <section className="panel input-panel">
               <div className="panel-header">
@@ -885,8 +914,9 @@ export default function RestrictedBoltzmannMachinePage() {
               />
             ) : null}
           </section>
+          ) : null}
 
-          {model ? (
+          {activePhase === "training" && model ? (
             <div className="rbm-matrix-scroll">
               <MatrixHeatmap
                 title="Hidden-to-visible weights"
@@ -903,6 +933,25 @@ export default function RestrictedBoltzmannMachinePage() {
         </div>
 
         <div className="rbm-stage-side">
+          {activePhase === "training" ? (
+            <section className="panel">
+              <div className="panel-header">
+                <h3>Training summary</h3>
+                <p>Compact snapshot of the current learning run and the final epoch quality.</p>
+              </div>
+              <dl className="run-stats">
+                <div><dt>Visible model</dt><dd>{visibleModel === "bernoulli" ? "Bernoulli" : "Gaussian"}</dd></div>
+                <div><dt>Backend</dt><dd>{backendKind}</dd></div>
+                <div><dt>Training samples</dt><dd>{datasetBundle?.trainingSampleCount ?? "n/a"}</dd></div>
+                <div><dt>Current epoch</dt><dd>{trainerEpoch}</dd></div>
+                <div><dt>Recon. error</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.reconstructionError.toFixed(4) : "n/a"}</dd></div>
+                <div><dt>Contrastive gap</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.contrastiveGap.toFixed(4) : "n/a"}</dd></div>
+                <div><dt>Mean hidden</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.hiddenActivation.toFixed(3) : "n/a"}</dd></div>
+                <div><dt>Mean |W|</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.weightMeanAbs.toFixed(4) : "n/a"}</dd></div>
+              </dl>
+            </section>
+          ) : null}
+          {activePhase === "inference" ? (
           <section className="panel">
             <div className="panel-header">
               <h3>Run state</h3>
@@ -943,6 +992,8 @@ export default function RestrictedBoltzmannMachinePage() {
               </div>
             </dl>
           </section>
+          ) : null}
+          {activePhase === "inference" ? (
           <EnergyPlot
             values={energyHistory}
             title="Free Energy"
@@ -952,12 +1003,15 @@ export default function RestrictedBoltzmannMachinePage() {
             width={320}
             height={140}
           />
+          ) : null}
         </div>
       </div>
 
+      {activePhase === "training" ? (
       <div className="rbm-gallery-grid">
         {featureMaps.length > 0 ? <FeatureGallery features={featureMaps} activeHiddenIndex={activeHiddenIndex} /> : null}
       </div>
+      ) : null}
 
       {showDatasetHelp && datasetBundle ? (
         <DatasetDialog title="Dataset" summary={datasetBundle.description} facts={datasetBundle.datasetFacts} onClose={() => setShowDatasetHelp(false)}>

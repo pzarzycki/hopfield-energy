@@ -421,6 +421,7 @@ export default function DenseAssociativeMemoryPage() {
   const hiddenActivationSeries = trainingHistory.map((entry) => entry.hiddenActivation);
   const winnerShareSeries = trainingHistory.map((entry) => entry.winnerShare);
   const energyValue = snapshot?.energy ?? (model ? computeAssociativeEnergy(queryPattern, model) : 0);
+  const [activePhase, setActivePhase] = useState<"training" | "inference">("training");
 
   return (
     <div className="page-shell rbm-page">
@@ -472,8 +473,16 @@ export default function DenseAssociativeMemoryPage() {
 
       </section>
 
+      <section className="phase-tabs" aria-label="Dense Associative Memory phase">
+        <div className="phase-tabs__list" role="tablist" aria-label="Dense Associative Memory phase">
+          <button type="button" className={activePhase === "training" ? "is-active" : ""} onClick={() => setActivePhase("training")} role="tab" aria-selected={activePhase === "training"}>Training</button>
+          <button type="button" className={activePhase === "inference" ? "is-active" : ""} onClick={() => setActivePhase("inference")} role="tab" aria-selected={activePhase === "inference"}>Inference</button>
+        </div>
+      </section>
+
       <div className="rbm-stage-grid">
         <div className="rbm-stage-main">
+          {activePhase === "training" ? (
           <section className="panel">
             <div className="panel-header"><h3>Training process</h3><p>Train the prototype matrix first, then inspect how sharply the hidden layer specializes and how well reconstructions improve over epochs.</p></div>
             <div className="rbm-training-top">
@@ -525,7 +534,9 @@ export default function DenseAssociativeMemoryPage() {
               <EnergyPlot values={winnerShareSeries} title="Winner Share" caption="How much one hidden slot dominates the activation mass." xLabel="epoch" yLabel="share" width={320} height={140} />
             </div>
           </section>
+          ) : null}
 
+          {activePhase === "inference" ? (
           <section className="panel">
             <div className="panel-header"><h3>Query and retrieval playback</h3><p>After training, apply a visible query and inspect how repeated hidden-prototype updates sharpen or stabilize the reconstruction.</p></div>
             <div className="convergence-strip">
@@ -550,7 +561,9 @@ export default function DenseAssociativeMemoryPage() {
               </div>
             </div>
           </section>
+          ) : null}
 
+          {activePhase === "inference" ? (
           <section className="rbm-canvas-row">
             <section className="panel input-panel">
               <div className="panel-header"><h3>Query</h3><p>Pick a stored exemplar, degrade it if needed, then edit the visible query directly before associative playback.</p></div>
@@ -628,8 +641,9 @@ export default function DenseAssociativeMemoryPage() {
               />
             ) : null}
           </section>
+          ) : null}
 
-          {model ? (
+          {activePhase === "training" && model ? (
             <div className="rbm-matrix-scroll">
               <MatrixHeatmap
                 title="Hidden-to-visible prototypes"
@@ -646,6 +660,22 @@ export default function DenseAssociativeMemoryPage() {
         </div>
 
         <div className="rbm-stage-side">
+          {activePhase === "training" ? (
+            <section className="panel">
+              <div className="panel-header"><h3>Training summary</h3><p>Compact summary of the latest epoch and hidden-competition quality.</p></div>
+              <dl className="run-stats">
+                <div><dt>Nonlinearity</dt><dd>{activation === "relu-power" ? "ReLU power" : activation === "signed-power" ? "Signed power" : "Softmax"}</dd></div>
+                <div><dt>Sharpness</dt><dd>{getSharpnessLabel(activation, sharpness)}</dd></div>
+                <div><dt>Training samples</dt><dd>{datasetBundle?.trainingSampleCount ?? "n/a"}</dd></div>
+                <div><dt>Current epoch</dt><dd>{trainerEpoch}</dd></div>
+                <div><dt>Recon. error</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.reconstructionError.toFixed(4) : "n/a"}</dd></div>
+                <div><dt>Contrastive gap</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.contrastiveGap.toFixed(4) : "n/a"}</dd></div>
+                <div><dt>Winner share</dt><dd>{latestTrainingMetrics ? `${(latestTrainingMetrics.winnerShare * 100).toFixed(1)}%` : "n/a"}</dd></div>
+                <div><dt>Mean |W|</dt><dd>{latestTrainingMetrics ? latestTrainingMetrics.weightMeanAbs.toFixed(4) : "n/a"}</dd></div>
+              </dl>
+            </section>
+          ) : null}
+          {activePhase === "inference" ? (
           <section className="panel">
             <div className="panel-header"><h3>Run state</h3><p>Live summary of the current retrieval trajectory and hidden competition.</p></div>
             <dl className="run-stats">
@@ -663,13 +693,18 @@ export default function DenseAssociativeMemoryPage() {
               <div><dt>Mean |h|</dt><dd>{hiddenSummary.length > 0 ? (hiddenSummary.reduce((total, value) => total + Math.abs(value), 0) / hiddenSummary.length).toFixed(3) : "n/a"}</dd></div>
             </dl>
           </section>
+          ) : null}
+          {activePhase === "inference" ? (
           <EnergyPlot values={energyHistory} title="Associative Energy" caption="Compact retrieval trace over the current query." xLabel="step" yLabel="energy" width={320} height={140} />
+          ) : null}
         </div>
       </div>
 
+      {activePhase === "training" ? (
       <div className="rbm-gallery-grid">
         {featureMaps.length > 0 ? <FeatureGallery features={featureMaps} activeHiddenIndex={activeHiddenIndex} /> : null}
       </div>
+      ) : null}
 
       {showDatasetHelp && datasetBundle ? (
         <DatasetDialog title="Dataset" summary={datasetBundle.description} facts={datasetBundle.datasetFacts} onClose={() => setShowDatasetHelp(false)}>

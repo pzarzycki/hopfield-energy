@@ -283,6 +283,7 @@ npm run wasm:dam:smoke
 ## Current Runtime Status
 
 - **Browser UI:** available and Wasm-backed for all currently implemented model families
+- **RBM / DAM workflow:** lower workspace now splits into `Training` and `Inference` phases while keeping `Dataset` and `Architecture` always visible
 - **CLI smoke tests:** available for DAM and RBM
 - **Rust/Wasm core:** baselines available for Hopfield, Dense Hopfield, RBM, and DAM
 - **Web workers:** used for browser-side long-running model execution
