@@ -3,6 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -12,16 +14,29 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Rust and wasm-pack
+        env:
+          RUSTUP_HOME: /usr/local/rustup
+          CARGO_HOME: /usr/local/cargo
+          PATH: /usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        run: |
+          mkdir -p $RUSTUP_HOME $CARGO_HOME
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain stable
+          $CARGO_HOME/bin/rustup target add wasm32-unknown-unknown
+          $CARGO_HOME/bin/cargo install wasm-pack
         
-      - name: Setup Node.js
+      - name: Setup Node.js and cache
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -30,15 +45,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Build
-        run: npm run build
+      - name: Full validation pipeline (including Wasm builds and regression tests)
+        env:
+          CARGO_HOME: /usr/local/cargo
+          RUSTUP_HOME: /usr/local/rustup
+          PATH: /usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        run: npm run verify:all
         
-      - name: Upload artifact
+      - name: Upload artifact to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
   deploy:
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

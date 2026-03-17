@@ -194,9 +194,44 @@ Inside the devcontainer the app listens on `http://localhost:5173/`. If you publ
 
 ### Production Build
 
+Inside the devcontainer:
+
 ```bash
 npm run build
 ```
+
+This is the final step of `npm run verify:all`, which runs the full validation pipeline (Rust tests, Wasm builds, smoke tests, and finally the production Vite build).
+
+### GitHub Pages Deployment
+
+The project publishes to GitHub Pages via GitHub Actions using a **devcontainer-aligned Docker environment** to ensure dev/prod parity.
+
+**Workflow behavior:**
+
+- **Pull requests** to `main`: Run the full `npm run verify:all` validation pipeline in a containerized environment. No deployment occurs.
+- **Push to `main`**: Run the same validation pipeline and automatically publish the resulting `dist/` to GitHub Pages.
+- **Workflow dispatch**: Manual trigger to build and deploy immediately.
+
+**Validation pipeline in CI** (`.github/workflows/deploy.yml`):
+
+The GitHub Actions workflow runs inside a container (`mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm`) with Rust and `wasm-pack` installed, matching the local devcontainer setup. It executes:
+
+```bash
+npm ci
+npm run verify:all
+```
+
+This ensures that:
+- Rust/Wasm code compiles and tests pass
+- Generated Wasm binaries are rebuilt and regression-tested
+- TypeScript is type-checked
+- ESLint passes
+- The production app builds successfully
+- Wasm smoke tests pass
+
+Only if all steps succeed does the build artifact upload to GitHub Pages and (on `main` pushes) trigger deployment.
+
+**Live site:** The app publishes to https://pzarzycki.github.io/hopfield-energy/ with the correct base path configured in `vite.config.ts`.
 
 ## CLI Smoke Tests
 
