@@ -49,6 +49,7 @@ interface GrayscaleHeatmapProps {
   data: Float32Array | Uint8Array;
   side: number;
   scale?: number;
+  autoContrast?: boolean;
   caption?: string;
   xLabel?: string;
   yLabel?: string;
@@ -258,12 +259,32 @@ export function GrayscaleHeatmap({
   data,
   side,
   scale = 10,
+  autoContrast = false,
   caption,
   xLabel = "grid x",
   yLabel = "grid y",
 }: GrayscaleHeatmapProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageBuffer = useMemo(() => new Uint8ClampedArray(data.length * 4), [data]);
+  const displayRange = useMemo(() => {
+    if (!autoContrast || data.length === 0) {
+      return { min: 0, max: 1 };
+    }
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (let index = 0; index < data.length; index += 1) {
+      const value = Number(data[index]);
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+    }
+
+    if (!Number.isFinite(min) || !Number.isFinite(max) || max - min < 1e-4) {
+      return { min: 0, max: 1 };
+    }
+
+    return { min, max };
+  }, [autoContrast, data]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -276,7 +297,7 @@ export function GrayscaleHeatmap({
       return;
     }
 
-    writeGrayscaleImage(imageBuffer, data);
+    writeGrayscaleImage(imageBuffer, data, displayRange.min, displayRange.max);
     const imageData = new ImageData(imageBuffer, side, side);
     const bitmapCanvas = document.createElement("canvas");
     bitmapCanvas.width = side;
@@ -290,7 +311,7 @@ export function GrayscaleHeatmap({
     context.imageSmoothingEnabled = false;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(bitmapCanvas, 0, 0, canvas.width, canvas.height);
-  }, [data, imageBuffer, side]);
+  }, [data, displayRange.max, displayRange.min, imageBuffer, side]);
 
   return (
     <section className="panel">

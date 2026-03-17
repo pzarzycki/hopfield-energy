@@ -640,14 +640,17 @@ button {
 }
 
 .phase-tabs__list button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
+  border-bottom: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.55);
   color: var(--muted);
-  border-radius: 0;
-  padding: 10px 14px 9px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 14px 8px;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -655,7 +658,47 @@ button {
 .phase-tabs__list button.is-active {
   color: var(--blue);
   border-bottom-color: var(--blue);
-  background: transparent;
+  background: rgba(67, 97, 238, 0.08);
+}
+
+.phase-tab-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.phase-tab-indicator--loading {
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.phase-tab-indicator--required,
+.phase-tab-indicator--locked {
+  color: #9a6700;
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.phase-tab-indicator--running {
+  color: #1d4ed8;
+  background: rgba(96, 165, 250, 0.16);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.phase-tab-indicator--trained,
+.phase-tab-indicator--available {
+  color: #166534;
+  background: rgba(74, 222, 128, 0.14);
+  border-color: rgba(34, 197, 94, 0.28);
 }
 
 .pattern-picker {

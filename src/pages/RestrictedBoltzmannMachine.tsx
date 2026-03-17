@@ -437,6 +437,8 @@ export default function RestrictedBoltzmannMachinePage() {
   const trainerEpoch = currentEpoch;
   const trainingProgress = epochs > 0 ? Math.min(100, Math.round((trainerEpoch / epochs) * 100)) : 0;
   const [activePhase, setActivePhase] = useState<"training" | "inference">("training");
+  const trainingPhaseStatus = isTraining ? "running" : isReady ? "trained" : isTrainingConfigured ? "required" : "loading";
+  const inferencePhaseStatus = isReady ? "available" : isTrainingConfigured ? "locked" : "loading";
 
   function handleStartTraining(): void {
     if (!isTrainingConfigured || currentEpoch >= epochs) {
@@ -566,6 +568,7 @@ export default function RestrictedBoltzmannMachinePage() {
             aria-selected={activePhase === "training"}
           >
             Training
+            <span className={`phase-tab-indicator phase-tab-indicator--${trainingPhaseStatus}`}>{trainingPhaseStatus}</span>
           </button>
           <button
             type="button"
@@ -575,6 +578,7 @@ export default function RestrictedBoltzmannMachinePage() {
             aria-selected={activePhase === "inference"}
           >
             Inference
+            <span className={`phase-tab-indicator phase-tab-indicator--${inferencePhaseStatus}`}>{inferencePhaseStatus}</span>
           </button>
         </div>
       </section>

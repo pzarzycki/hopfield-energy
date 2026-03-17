@@ -44,6 +44,9 @@ Current status:
 - Node-side Wasm smoke paths exist for Hopfield, Dense Hopfield, RBM, and DAM
 - deterministic Wasm regression checks now exist across all currently implemented model families
 - browser pages for Hopfield, Dense Hopfield, RBM, and DAM now execute through Wasm-backed workers
+- DAM now uses one explicit grayscale contract:
+  - external dataset/query/reconstruction space stays in `[0,1]`
+  - internal DAM scoring and prototype learning use a documented contrast-centered representation
 - RBM and DAM now separate architecture, training, and query playback more clearly in the browser UI
 - legacy TypeScript training/backend paths for the implemented models have been removed or reduced to lightweight UI/helper types
 - dataset examples are now accessed through a consistent dataset help dialog instead of occupying the main page layout
@@ -64,6 +67,7 @@ Current verified state:
 - app build passes inside the devcontainer
 - `npm run verify:all` passes inside the devcontainer
 - DAM and RBM terminal smoke tests pass inside the devcontainer
+- DAM smoke now includes explicit collapse guards, so future retrieval collapse fails the terminal suite instead of only degrading the UI
 - Rust/Wasm smoke tests pass for Hopfield, Dense Hopfield, RBM, and DAM inside the devcontainer
 - Rust/Wasm invariant and regression checks pass for Hopfield, Dense Hopfield, RBM, and DAM inside the devcontainer
 - the app is served successfully from the devcontainer and reachable from the host browser
@@ -268,6 +272,8 @@ Both commands emit JSON summaries with:
 - reconstruction metrics before and after training
 - final epoch metrics
 - simple noisy-retrieval evaluation against the stored reference exemplars
+
+`npm run dam:smoke` also fails if DAM retrieval collapses below minimum diversity thresholds.
 
 ### Wasm Core
 

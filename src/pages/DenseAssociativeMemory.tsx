@@ -7,7 +7,6 @@ import { formatPrimaryTasks, getModelCatalogEntry } from "../core/modelCatalog";
 import {
   applyDenseAssociativeNoise,
   buildDenseAssociativeHiddenGrid,
-  computeAssociativeEnergy,
   createBlankDenseAssociativePattern,
   getDenseAssociativeHiddenGridSide,
   type DenseAssociativeActivation,
@@ -58,7 +57,7 @@ async function loadDenseAssociativeDataset(name: DatasetName): Promise<DenseAsso
     memoryLabels: memorySamples.map((sample) => sample.labelName),
     memoryPatterns: memorySamples.map((sample) => grayscaleToFloat32(sample.pattern)),
     trainingSampleCount: archive.samples.length,
-    description: `Original grayscale ${archive.name} exemplars loaded from the bundled binary archive.`,
+    description: `Original grayscale ${archive.name} exemplars loaded from the bundled binary archive. The DAM UI stays in [0,1] grayscale; the Wasm core scores and trains in a centered contrast space.`,
     datasetFacts: [`${stats.sampleCount} samples`, `${stats.classCount} classes`, perClassLabel],
   };
 }
@@ -76,12 +75,12 @@ function getWeightMaxAbs(model: DenseAssociativeMemoryModel | null): number {
 
 function getActivationSummary(activation: DenseAssociativeActivation): string {
   if (activation === "relu-power") {
-    return "Rectified power is the default Krotov-style choice: only positively aligned hidden slots survive, and higher exponent sharpens competition.";
+    return "Rectified power is the default Krotov-style choice: the single strongest positively aligned hidden slot survives, and higher exponent sharpens competition further.";
   }
   if (activation === "signed-power") {
-    return "Signed power keeps both supportive and inhibitory evidence, so anti-matching hidden slots can actively suppress reconstruction directions.";
+    return "Signed power keeps the same sparse winner path but preserves sign, so the winning hidden slot can support or suppress reconstruction directions.";
   }
-  return "Softmax replaces polynomial competition with normalized attention over learned prototype slots.";
+  return "Softmax replaces sparse polynomial competition with normalized attention over learned prototype slots. It is available for comparison, not the default DAM path.";
 }
 
 function getSharpnessLabel(activation: DenseAssociativeActivation, sharpness: number): string {
@@ -123,6 +122,7 @@ function HelpDialog({ activation, sharpness, onClose }: { activation: DenseAssoc
             <span className="modal-section-label">Interpretation</span>
             <div className="modal-prose">
               <p>{renderTextWithMath("The visible pattern $x$ drives hidden prototype slots through a sharp nonlinearity. Higher sharpness makes the hidden layer more winner-take-all.")}</p>
+              <p>{renderTextWithMath("The UI stays in grayscale $[0,1]$, but the Wasm core scores and trains in a contrast-centered space before mapping reconstructions back to grayscale.")}</p>
               <p>{renderTextWithMath("Each hidden column of $W$ acts like a learned prototype. Retrieval alternates between hidden activation and visible reconstruction until the state stabilizes.")}</p>
               <p>{renderTextWithMath(`Current sharpness is ${getSharpnessLabel(activation, sharpness)}.`)}</p>
             </div>
@@ -420,8 +420,10 @@ export default function DenseAssociativeMemoryPage() {
   const contrastiveGapSeries = trainingHistory.map((entry) => entry.contrastiveGap);
   const hiddenActivationSeries = trainingHistory.map((entry) => entry.hiddenActivation);
   const winnerShareSeries = trainingHistory.map((entry) => entry.winnerShare);
-  const energyValue = snapshot?.energy ?? (model ? computeAssociativeEnergy(queryPattern, model) : 0);
+  const energyValue = snapshot?.energy ?? 0;
   const [activePhase, setActivePhase] = useState<"training" | "inference">("training");
+  const trainingPhaseStatus = isTraining ? "running" : isReady ? "trained" : isTrainingConfigured ? "required" : "loading";
+  const inferencePhaseStatus = isReady ? "available" : isTrainingConfigured ? "locked" : "loading";
 
   return (
     <div className="page-shell rbm-page">
@@ -475,8 +477,14 @@ export default function DenseAssociativeMemoryPage() {
 
       <section className="phase-tabs" aria-label="Dense Associative Memory phase">
         <div className="phase-tabs__list" role="tablist" aria-label="Dense Associative Memory phase">
-          <button type="button" className={activePhase === "training" ? "is-active" : ""} onClick={() => setActivePhase("training")} role="tab" aria-selected={activePhase === "training"}>Training</button>
-          <button type="button" className={activePhase === "inference" ? "is-active" : ""} onClick={() => setActivePhase("inference")} role="tab" aria-selected={activePhase === "inference"}>Inference</button>
+          <button type="button" className={activePhase === "training" ? "is-active" : ""} onClick={() => setActivePhase("training")} role="tab" aria-selected={activePhase === "training"}>
+            Training
+            <span className={`phase-tab-indicator phase-tab-indicator--${trainingPhaseStatus}`}>{trainingPhaseStatus}</span>
+          </button>
+          <button type="button" className={activePhase === "inference" ? "is-active" : ""} onClick={() => setActivePhase("inference")} role="tab" aria-selected={activePhase === "inference"}>
+            Inference
+            <span className={`phase-tab-indicator phase-tab-indicator--${inferencePhaseStatus}`}>{inferencePhaseStatus}</span>
+          </button>
         </div>
       </section>
 
@@ -625,6 +633,7 @@ export default function DenseAssociativeMemoryPage() {
               data={reconstruction}
               side={PATTERN_SIDE}
               scale={9}
+              autoContrast
               caption={snapshot ? `Step ${snapshot.step} • mean absolute reconstruction error ${snapshot.reconstructionError.toFixed(4)}` : "Current visible reconstruction."}
             />
 

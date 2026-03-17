@@ -117,10 +117,13 @@ function evaluateReconstruction(
 function evaluateRetrieval(
   core: InstanceType<DamWasmModule["DenseAssociativeMemoryCore"]>,
   references: Float32Array[],
+  labels: string[],
   steps: number,
 ) {
   let exactMatches = 0;
   let totalError = 0;
+  const matchedLabels = new Set<string>();
+  const topHiddenIndices = new Set<number>();
 
   for (let index = 0; index < references.length; index += 1) {
     core.set_query(applyDenseAssociativeNoise(references[index]!, 20, 20));
@@ -131,7 +134,12 @@ function evaluateRetrieval(
       core.step(1e-3);
     }
     totalError += core.reconstruction_error();
-    if (core.matched_pattern_index() === index) {
+    const matchedIndex = core.matched_pattern_index();
+    if (matchedIndex >= 0) {
+      matchedLabels.add(labels[matchedIndex] ?? String(matchedIndex));
+    }
+    topHiddenIndices.add(core.top_hidden_index());
+    if (matchedIndex === index) {
       exactMatches += 1;
     }
   }
@@ -140,6 +148,8 @@ function evaluateRetrieval(
     exactMatches,
     total: references.length,
     meanError: totalError / Math.max(references.length, 1),
+    distinctMatchedLabels: matchedLabels.size,
+    distinctTopHidden: topHiddenIndices.size,
   };
 }
 
@@ -148,7 +158,9 @@ async function main() {
   const wasm = (await import("../wasm-core/pkg-node/hopfield_energy_wasm.js")) as DamWasmModule;
   const archive = await loadDatasetArchiveFromNodeFs(options.dataset);
   const samples = archive.samples.map((sample) => grayscaleToFloat32(sample.pattern));
-  const references = selectMemorySamples(archive).map((sample) => grayscaleToFloat32(sample.pattern));
+  const referenceSamples = selectMemorySamples(archive);
+  const references = referenceSamples.map((sample) => grayscaleToFloat32(sample.pattern));
+  const referenceLabels = referenceSamples.map((sample) => sample.labelName);
   const visibleUnits = samples[0]?.length ?? 784;
 
   const core = new wasm.DenseAssociativeMemoryCore(
@@ -177,7 +189,12 @@ async function main() {
     });
   }
   const after = evaluateReconstruction(core, samples);
-  const retrieval = evaluateRetrieval(core, references, options.retrievalSteps);
+  const retrieval = evaluateRetrieval(core, references, referenceLabels, options.retrievalSteps);
+  if (retrieval.exactMatches < 3 || retrieval.distinctMatchedLabels < 3 || retrieval.distinctTopHidden < 6) {
+    throw new Error(
+      `DAM smoke failed collapse guard: exactMatches=${retrieval.exactMatches}, distinctMatchedLabels=${retrieval.distinctMatchedLabels}, distinctTopHidden=${retrieval.distinctTopHidden}`,
+    );
+  }
 
   console.log(
     JSON.stringify(

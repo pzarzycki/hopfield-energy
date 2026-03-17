@@ -39,10 +39,16 @@ export function writePatternImage(target: Uint8ClampedArray, pattern: Int8Array 
   }
 }
 
-export function writeGrayscaleImage(target: Uint8ClampedArray, pattern: Float32Array | Uint8Array): void {
+export function writeGrayscaleImage(
+  target: Uint8ClampedArray,
+  pattern: Float32Array | Uint8Array,
+  minValue = 0,
+  maxValue = 1,
+): void {
+  const safeRange = Math.max(maxValue - minValue, 1e-6);
   for (let index = 0; index < pattern.length; index += 1) {
     const offset = index * 4;
-    const value = clamp(Number(pattern[index]), 0, 1);
+    const value = clamp((Number(pattern[index]) - minValue) / safeRange, 0, 1);
     const shade = Math.round(247 - value * 220);
     target[offset] = shade;
     target[offset + 1] = shade;
